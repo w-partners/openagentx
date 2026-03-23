@@ -1,0 +1,137 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/llm/.claude/hooks/rtk-rewrite.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/llm/starian/.claude/hooks/subagent-reminder.mjs"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/llm/.claude/hooks/memory/search.mjs"
+          },
+          {
+            "type": "command",
+            "command": "node /home/llm/starian/.claude/hooks/memory/checkpoint.mjs",
+            "timeout": 8,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/llm/.claude/hooks/memory/save.mjs"
+          },
+          {
+            "type": "command",
+            "command": "node /home/llm/.claude/hooks/memory/capture-insight.mjs"
+          },
+          {
+            "type": "command",
+            "command": "node /home/llm/.claude/hooks/memory/post-feed.mjs"
+          },
+          {
+            "type": "command",
+            "command": "node /home/llm/.claude/hooks/memory/engage-feed.mjs"
+          },
+          {
+            "type": "command",
+            "command": "node /home/llm/starian/.claude/hooks/memory/record-response.mjs",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/llm/.claude/hooks/memory/reindex.mjs"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/llm/.claude/hooks/memory/compact.mjs"
+          },
+          {
+            "type": "command",
+            "command": "node /home/llm/.claude/hooks/memory/checkpoint.mjs"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "HOOK_EVENT=SubagentStart node /home/llm/starian/.claude/hooks/log-hook-event.mjs",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/llm/.claude/hooks/memory/capture-subagent.mjs"
+          },
+          {
+            "type": "command",
+            "command": "HOOK_EVENT=SubagentStop node /home/llm/starian/.claude/hooks/log-hook-event.mjs",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/llm/.claude/hooks/memory/session-restore.mjs"
+          }
+        ]
+      }
+    ]
+  }
+}

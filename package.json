@@ -1,0 +1,45 @@
+{
+  "name": "cryptointel",
+  "version": "2.0.0",
+  "description": "Korean AI Agent Marketplace - Phase 1: ACP Seller Agent",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "migrate:up": "node-pg-migrate up",
+    "migrate:down": "node-pg-migrate down",
+    "migrate:create": "node-pg-migrate create"
+  },
+  "keywords": [
+    "ai-agent",
+    "marketplace",
+    "acp",
+    "virtuals-protocol",
+    "crypto"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@virtuals-protocol/acp-node": "^0.3.0-beta.38",
+    "axios": "^1.13.6",
+    "dotenv": "^17.3.1",
+    "ethers": "^6.16.0",
+    "fastify": "^5.8.2",
+    "ioredis": "^5.10.1",
+    "node-cron": "^4.2.1",
+    "node-pg-migrate": "^8.0.4",
+    "pg": "^8.20.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.5",
+    "@types/pg": "^8.15.4"
+  }
+}

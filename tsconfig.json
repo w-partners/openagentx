@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "paths": {
+      "@config/*": ["./src/config/*"],
+      "@services/*": ["./src/services/*"],
+      "@data/*": ["./src/data/*"],
+      "@db/*": ["./src/db/*"],
+      "@cache/*": ["./src/cache/*"],
+      "@acp/*": ["./src/acp/*"],
+      "@wallet/*": ["./src/wallet/*"],
+      "@notifications/*": ["./src/notifications/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@api/*": ["./src/api/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

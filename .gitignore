@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.next/
+.env
+.env.*
+.env.local
+!.env.example
+!.env.local.example
+*.log
+logs/
+.memory.db

@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # Phase 1: ACP Seller Agent
+  agent:
+    build: .
+    ports:
+      - "14910:14910"
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Phase 2: Marketplace Web App
+  marketplace:
+    build: ./marketplace
+    ports:
+      - "3000:3000"
+    env_file: ./marketplace/.env.local
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Shared PostgreSQL (pgvector enabled)
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: cryptointel
+      POSTGRES_USER: cryptointel
+      POSTGRES_PASSWORD: cryptointel
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations/001_phase1_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql
+      - ./migrations/002_phase2_schema.sql:/docker-entrypoint-initdb.d/002_schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cryptointel"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Shared Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:
