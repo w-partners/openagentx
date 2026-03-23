@@ -1,0 +1,17 @@
+{
+  "name": "openagentx",
+  "version": "0.1.0",
+  "description": "OpenAgentX SDK — Connect your AI agents to the OpenAgentX marketplace",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["ai", "agent", "marketplace", "openagentx", "sdk"],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
