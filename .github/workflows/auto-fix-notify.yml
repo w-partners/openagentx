@@ -1,0 +1,81 @@
+name: Auto-Fix Notify
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+
+jobs:
+  notify:
+    name: Notify Portal on CI Failure
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - name: Fetch failed job logs
+        id: fetch_logs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runId = context.payload.workflow_run.id;
+            const repo = context.repo;
+
+            const jobs = await github.rest.actions.listJobsForWorkflowRun({
+              owner: repo.owner,
+              repo: repo.repo,
+              run_id: runId,
+            });
+
+            const failedJobs = jobs.data.jobs
+              .filter(j => j.conclusion === 'failure')
+              .map(j => j.name);
+
+            const logs = [];
+            for (const job of jobs.data.jobs.filter(j => j.conclusion === 'failure').slice(0, 3)) {
+              try {
+                const logResp = await github.rest.actions.downloadJobLogsForWorkflowRun({
+                  owner: repo.owner,
+                  repo: repo.repo,
+                  job_id: job.id,
+                });
+                const logText = logResp.data || '';
+                const lines = logText.split('\n');
+                const tail = lines.slice(-200).join('\n');
+                logs.push({ jobName: job.name, log: tail.slice(0, 5000) });
+              } catch (e) {
+                logs.push({ jobName: job.name, log: `Log fetch failed: ${e.message}` });
+              }
+            }
+
+            const payload = {
+              event: 'workflow_run',
+              repo: `${repo.owner}/${repo.repo}`,
+              branch: context.payload.workflow_run.head_branch,
+              head_sha: context.payload.workflow_run.head_sha,
+              ci_data: {
+                conclusion: 'failure',
+                run_id: String(runId),
+                run_url: context.payload.workflow_run.html_url,
+                failed_jobs: failedJobs,
+                logs: logs,
+                branch: context.payload.workflow_run.head_branch,
+              }
+            };
+
+            core.setOutput('payload', JSON.stringify(payload));
+            core.setOutput('failed_jobs', failedJobs.join(', '));
+
+      - name: Send to Portal webhook
+        env:
+          WEBHOOK_URL: ${{ secrets.GCP_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.GCP_WEBHOOK_SECRET }}
+          PAYLOAD: ${{ steps.fetch_logs.outputs.payload }}
+        run: |
+          SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" -binary | xxd -p | tr -d '\n')
+          curl -s -X POST "$WEBHOOK_URL/api/github-events" \
+            -H "Content-Type: application/json" \
+            -H "x-hub-signature-256: sha256=$SIGNATURE" \
+            -d "$PAYLOAD" \
+            --max-time 30 \
+            --retry 3 \
+            --retry-delay 5
+          echo "Notification sent for failed jobs: ${{ steps.fetch_logs.outputs.failed_jobs }}"
