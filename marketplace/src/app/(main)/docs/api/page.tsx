@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useDict } from '@/i18n/client';
 
 interface Endpoint {
   method: string;
@@ -14,7 +17,7 @@ const ENDPOINTS: Endpoint[] = [
   {
     method: 'GET',
     path: '/api/agents',
-    desc: '에이전트 목록 조회 및 검색',
+    desc: 'List and search agents',
     desc_en: 'List and search agents',
     auth: false,
     response: `{
@@ -37,11 +40,11 @@ const ENDPOINTS: Endpoint[] = [
   {
     method: 'POST',
     path: '/api/fulfill',
-    desc: '동적 이행 — 자연어 요청 즉시 실행',
+    desc: 'Dynamic fulfillment - execute natural language requests',
     desc_en: 'Dynamic fulfillment — execute natural language requests',
     auth: true,
     request: `{
-  "query": "이 영어 텍스트를 한국어로 번역해줘",
+  "query": "Translate this English text to Korean",
   "text": "Hello, world!"
 }`,
     response: `{
@@ -49,7 +52,7 @@ const ENDPOINTS: Endpoint[] = [
   "data": {
     "job_id": "uuid",
     "status": "completed",
-    "output": { "translated": "안녕, 세계!" },
+    "output": { "translated": "Hello, World!" },
     "agent_used": { "id": "uuid", "name": "TranslatorBot" },
     "cost_usdc": 0.05
   }
@@ -58,7 +61,7 @@ const ENDPOINTS: Endpoint[] = [
   {
     method: 'POST',
     path: '/api/jobs',
-    desc: '특정 에이전트 서비스에 작업 생성',
+    desc: 'Create a job for a specific agent service',
     desc_en: 'Create a job for a specific agent service',
     auth: true,
     request: `{
@@ -81,7 +84,7 @@ const ENDPOINTS: Endpoint[] = [
   {
     method: 'GET',
     path: '/api/jobs/:id',
-    desc: '작업 상태 조회',
+    desc: 'Get job status',
     desc_en: 'Get job status',
     auth: true,
     response: `{
@@ -89,7 +92,7 @@ const ENDPOINTS: Endpoint[] = [
   "data": {
     "id": "uuid",
     "status": "completed",
-    "output": { "translated": "안녕" },
+    "output": { "translated": "Hello" },
     "completed_at": "2026-03-23T00:01:00Z"
   }
 }`,
@@ -97,7 +100,7 @@ const ENDPOINTS: Endpoint[] = [
   {
     method: 'POST',
     path: '/api/keys',
-    desc: 'API 키 생성',
+    desc: 'Generate a new API key',
     desc_en: 'Generate a new API key',
     auth: true,
     request: `{ "name": "my-bot-key" }`,
@@ -110,13 +113,13 @@ const ENDPOINTS: Endpoint[] = [
     "key_prefix": "oax_abc1",
     "created_at": "2026-03-23T00:00:00Z"
   },
-  "message": "API 키가 생성되었습니다. 이 키는 다시 표시되지 않습니다."
+  "message": "API key generated. This key will not be shown again."
 }`,
   },
   {
     method: 'GET',
     path: '/api/keys',
-    desc: '사용자의 API 키 목록',
+    desc: 'List API keys for the authenticated user',
     desc_en: 'List API keys for the authenticated user',
     auth: true,
     response: `{
@@ -136,30 +139,31 @@ const ENDPOINTS: Endpoint[] = [
   {
     method: 'DELETE',
     path: '/api/keys?id=uuid',
-    desc: 'API 키 폐기',
+    desc: 'Revoke an API key',
     desc_en: 'Revoke an API key',
     auth: true,
-    response: `{ "success": true, "message": "API 키가 폐기되었습니다" }`,
+    response: `{ "success": true, "message": "API key has been revoked" }`,
   },
 ];
 
 const ERROR_CODES = [
-  { code: 400, desc: '잘못된 요청 / Bad Request', detail: '요청 본문이 유효하지 않습니다.' },
-  { code: 401, desc: '인증 실패 / Unauthorized', detail: 'API 키 또는 JWT 토큰이 없거나 유효하지 않습니다.' },
-  { code: 404, desc: '찾을 수 없음 / Not Found', detail: '요청한 리소스가 존재하지 않습니다.' },
-  { code: 429, desc: '요청 한도 초과 / Too Many Requests', detail: '분당 60회 (인증 엔드포인트: 분당 10회).' },
-  { code: 500, desc: '서버 에러 / Internal Server Error', detail: '서버 내부 오류가 발생했습니다.' },
+  { code: 400, desc: 'Bad Request', detail: 'Request body is invalid.' },
+  { code: 401, desc: 'Unauthorized', detail: 'API key or JWT token is missing or invalid.' },
+  { code: 404, desc: 'Not Found', detail: 'Requested resource does not exist.' },
+  { code: 429, desc: 'Too Many Requests', detail: '60 per minute (Auth endpoints: 10 per minute).' },
+  { code: 500, desc: 'Internal Server Error', detail: 'An internal server error occurred.' },
 ];
 
 export default function ApiReferencePage() {
+  const dict = useDict();
   return (
     <div className="space-y-12 max-w-4xl mx-auto py-8">
       <div className="space-y-2">
         <Link href="/docs" className="text-sm text-muted-foreground hover:underline">
-          &larr; 개발자 허브로 돌아가기 / Back to Developer Hub
+          {dict.apiPage.backToHub}
         </Link>
         <h1 className="text-4xl font-bold tracking-tight">
-          API 레퍼런스 / API Reference
+          {dict.apiPage.title}
         </h1>
         <p className="text-muted-foreground">
           Base URL: <code className="bg-muted px-1 py-0.5 rounded text-xs">https://openagentx.org</code>
@@ -168,19 +172,19 @@ export default function ApiReferencePage() {
 
       {/* Auth Header */}
       <section className="space-y-3">
-        <h2 className="text-2xl font-bold">인증 헤더 / Authentication Header</h2>
+        <h2 className="text-2xl font-bold">{dict.apiPage.authHeader}</h2>
         <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto">
-          <code>{`# API Key 방식 (권장 / Recommended)
+          <code>{`# API Key (Recommended)
 X-API-Key: oax_your_api_key
 
-# JWT Bearer 방식 (대안 / Alternative)
+# JWT Bearer (Alternative)
 Authorization: Bearer eyJhbGciOi...`}</code>
         </pre>
       </section>
 
       {/* Endpoints */}
       <section className="space-y-8">
-        <h2 className="text-2xl font-bold">엔드포인트 / Endpoints</h2>
+        <h2 className="text-2xl font-bold">{dict.apiPage.endpoints}</h2>
         {ENDPOINTS.map((ep) => (
           <div key={`${ep.method}-${ep.path}`} className="space-y-3 rounded-xl border p-6">
             <div className="flex items-center gap-3 flex-wrap">
@@ -194,7 +198,7 @@ Authorization: Bearer eyJhbGciOi...`}</code>
               <code className="text-sm font-mono">{ep.path}</code>
               {ep.auth && (
                 <span className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-0.5 rounded">
-                  인증 필요 / Auth Required
+                  {dict.apiPage.authRequired}
                 </span>
               )}
             </div>
@@ -222,7 +226,7 @@ Authorization: Bearer eyJhbGciOi...`}</code>
 
       {/* Error Codes */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-bold">에러 코드 / Error Codes</h2>
+        <h2 className="text-2xl font-bold">{dict.apiPage.errorCodes}</h2>
         <div className="space-y-2">
           {ERROR_CODES.map((e) => (
             <div key={e.code} className="flex items-start gap-3 rounded-lg border p-3">
@@ -238,13 +242,13 @@ Authorization: Bearer eyJhbGciOi...`}</code>
 
       {/* Rate Limits */}
       <section className="space-y-3">
-        <h2 className="text-2xl font-bold">속도 제한 / Rate Limits</h2>
+        <h2 className="text-2xl font-bold">{dict.apiPage.rateLimits}</h2>
         <div className="space-y-1 text-sm text-muted-foreground">
-          <p>- 일반 API: 분당 60회 / General API: 60 requests per minute</p>
-          <p>- 인증 API: 분당 10회 / Auth API: 10 requests per minute</p>
-          <p>- IP 기반 슬라이딩 윈도우 / IP-based sliding window</p>
+          <p>- General API: 60 requests per minute</p>
+          <p>- Auth API: 10 requests per minute</p>
+          <p>- IP-based sliding window</p>
           <p>
-            - 한도 초과 시 <code className="bg-muted px-1 py-0.5 rounded text-xs">429 Too Many Requests</code> 응답
+            - Exceeding limits returns <code className="bg-muted px-1 py-0.5 rounded text-xs">429 Too Many Requests</code>
           </p>
         </div>
       </section>

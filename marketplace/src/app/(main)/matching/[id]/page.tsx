@@ -6,13 +6,13 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CATEGORY_LABELS } from '@/lib/utils/constants';
+import { useDict } from '@/i18n/client';
 
 const URGENCY_LABELS: Record<string, string> = {
-  low: '낮음',
-  normal: '보통',
-  urgent: '긴급',
-  critical: '매우 긴급',
+  low: 'Low',
+  normal: 'Normal',
+  urgent: 'Urgent',
+  critical: 'Critical',
 };
 
 const URGENCY_COLORS: Record<string, string> = {
@@ -23,10 +23,10 @@ const URGENCY_COLORS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  waiting: '대기 중',
-  matched: '매칭 완료',
-  cancelled: '취소됨',
-  expired: '만료됨',
+  waiting: 'Waiting',
+  matched: 'Matched',
+  cancelled: 'Cancelled',
+  expired: 'Expired',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -65,14 +65,15 @@ interface AgentOption {
 
 function timeRemaining(expiresAt: string): string {
   const diff = new Date(expiresAt).getTime() - Date.now();
-  if (diff <= 0) return '만료됨';
+  if (diff <= 0) return 'Expired';
   const hours = Math.floor(diff / 3600000);
   const minutes = Math.floor((diff % 3600000) / 60000);
-  if (hours > 0) return `${hours}시간 ${minutes}분 남음`;
-  return `${minutes}분 남음`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
 }
 
 export default function MatchingDetailPage() {
+  const dict = useDict();
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -90,9 +91,9 @@ export default function MatchingDetailPage() {
       .then((r) => r.json())
       .then((res) => {
         if (res.success) setRequest(res.data);
-        else setError(res.error || '요청을 불러올 수 없습니다');
+        else setError(res.error || dict.matchingDetail.loadError);
       })
-      .catch(() => setError('네트워크 오류'))
+      .catch(() => setError('Network error'))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -114,7 +115,7 @@ export default function MatchingDetailPage() {
 
   const handleAccept = async () => {
     if (!selectedAgent) {
-      setError('에이전트를 선택해 주세요');
+      setError(dict.matchingDetail.selectAgentError);
       return;
     }
     setAccepting(true);
@@ -131,10 +132,10 @@ export default function MatchingDetailPage() {
         setAcceptResult(data.data);
         loadRequest();
       } else {
-        setError(data.error || '수락에 실패했습니다');
+        setError(data.error || dict.matchingDetail.acceptFailed);
       }
     } catch {
-      setError('네트워크 오류가 발생했습니다');
+      setError(dict.common.networkError);
     } finally {
       setAccepting(false);
     }
@@ -151,22 +152,22 @@ export default function MatchingDetailPage() {
       if (data.success) {
         loadRequest();
       } else {
-        setError(data.error || '취소에 실패했습니다');
+        setError(data.error || dict.matchingDetail.cancelFailed);
       }
     } catch {
-      setError('네트워크 오류');
+      setError(dict.common.networkError);
     }
   };
 
   if (loading) {
-    return <div className="text-center py-12 text-muted-foreground">로딩 중...</div>;
+    return <div className="text-center py-12 text-muted-foreground">{dict.common.loading}</div>;
   }
 
   if (!request) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground mb-4">매칭 요청을 찾을 수 없습니다</p>
-        <Link href="/matching"><Button>목록으로 돌아가기</Button></Link>
+        <p className="text-muted-foreground mb-4">{dict.matchingDetail.requestNotFound}</p>
+        <Link href="/matching"><Button>{dict.common.backToList}</Button></Link>
       </div>
     );
   }
@@ -178,7 +179,7 @@ export default function MatchingDetailPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <Link href="/matching" className="text-sm text-muted-foreground hover:text-foreground">
-        &larr; 실시간 매칭 목록
+        {dict.matchingDetail.backToList}
       </Link>
 
       <Card>
@@ -191,32 +192,32 @@ export default function MatchingDetailPage() {
               {URGENCY_LABELS[request.urgency] ?? request.urgency}
             </Badge>
             <span className="text-xs text-muted-foreground ml-auto">
-              {CATEGORY_LABELS[request.category] ?? request.category}
+              {dict.categories[request.category as keyof typeof dict.categories] ?? request.category}
             </span>
           </div>
           <CardTitle className="text-2xl mt-3">{request.title}</CardTitle>
           <CardDescription>
-            {request.requester_name && <span>요청자: {request.requester_name} | </span>}
-            {new Date(request.created_at).toLocaleString('ko-KR')}
+            {request.requester_name && <span>Requester: {request.requester_name} | </span>}
+            {new Date(request.created_at).toLocaleString('en-US')}
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
           <div>
-            <h3 className="text-sm font-medium mb-2">설명</h3>
+            <h3 className="text-sm font-medium mb-2">{dict.matchingDetail.descriptionLabel}</h3>
             <p className="text-sm text-muted-foreground whitespace-pre-wrap">{request.description}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="font-medium">연결 수수료:</span>{' '}
+              <span className="font-medium">{dict.matchingDetail.connectionFee}</span>{' '}
               <span className="text-primary font-semibold">
-                {Number(request.connection_fee).toFixed(2)} USDC
+                ${Number(request.connection_fee).toFixed(2)}
               </span>
             </div>
             <div>
               <span className="font-medium">
-                {isExpired ? '만료 시간:' : '남은 시간:'}
+                {isExpired ? 'Expired at:' : 'Time remaining:'}
               </span>{' '}
               <span>{timeRemaining(request.expires_at)}</span>
             </div>
@@ -225,21 +226,21 @@ export default function MatchingDetailPage() {
           {/* Matched info */}
           {isMatched && (
             <div className="rounded-lg border bg-green-50 dark:bg-green-950 p-4 space-y-2">
-              <h3 className="font-semibold text-green-800 dark:text-green-200">매칭 완료!</h3>
+              <h3 className="font-semibold text-green-800 dark:text-green-200">{dict.matchingDetail.matchCompleted}</h3>
               <div className="text-sm space-y-1">
                 {request.provider_name && (
-                  <p>제공자: <span className="font-medium">{request.provider_name}</span></p>
+                  <p>Provider: <span className="font-medium">{request.provider_name}</span></p>
                 )}
                 {request.agent_name && (
                   <p>
-                    에이전트:{' '}
+                    Agent:{' '}
                     <Link href={`/agents/${request.agent_slug}`} className="font-medium text-primary hover:underline">
                       {request.agent_name}
                     </Link>
                   </p>
                 )}
                 {request.matched_at && (
-                  <p>매칭 시간: {new Date(request.matched_at).toLocaleString('ko-KR')}</p>
+                  <p>Matched at: {new Date(request.matched_at).toLocaleString('en-US')}</p>
                 )}
               </div>
             </div>
@@ -248,7 +249,7 @@ export default function MatchingDetailPage() {
           {/* Accept result info */}
           {acceptResult && (
             <div className="rounded-lg border bg-blue-50 dark:bg-blue-950 p-4 space-y-2">
-              <h3 className="font-semibold text-blue-800 dark:text-blue-200">연결 정보</h3>
+              <h3 className="font-semibold text-blue-800 dark:text-blue-200">Connection Info</h3>
               <pre className="text-xs whitespace-pre-wrap">
                 {JSON.stringify(acceptResult, null, 2)}
               </pre>
@@ -259,7 +260,7 @@ export default function MatchingDetailPage() {
           {isExpired && (
             <div className="rounded-lg border bg-red-50 dark:bg-red-950 p-4">
               <p className="text-sm text-red-700 dark:text-red-300">
-                이 요청은 만료되었습니다. 새 요청을 등록해 주세요.
+                {dict.matchingDetail.requestExpired}
               </p>
             </div>
           )}
@@ -272,7 +273,7 @@ export default function MatchingDetailPage() {
           {isWaiting && agents.length > 0 && (
             <div className="w-full space-y-3">
               <div>
-                <label className="block text-sm font-medium mb-1">에이전트 선택</label>
+                <label className="block text-sm font-medium mb-1">{dict.matchingDetail.selectAgent}</label>
                 <select
                   value={selectedAgent}
                   onChange={(e) => setSelectedAgent(e.target.value)}
@@ -289,8 +290,8 @@ export default function MatchingDetailPage() {
                 className="w-full"
               >
                 {accepting
-                  ? '수락 처리 중...'
-                  : `수락하기 (${Number(request.connection_fee).toFixed(2)} USDC 차감)`}
+                  ? 'Processing...'
+                  : `Accept ($${Number(request.connection_fee).toFixed(2)} deducted)`}
               </Button>
             </div>
           )}
@@ -298,12 +299,12 @@ export default function MatchingDetailPage() {
           {/* Requester cancel */}
           {isWaiting && (
             <Button variant="outline" onClick={handleCancel} className="w-full">
-              요청 취소
+              Cancel Request
             </Button>
           )}
 
           <Link href="/matching" className="w-full">
-            <Button variant="ghost" className="w-full">목록으로</Button>
+            <Button variant="ghost" className="w-full">{dict.common.backToList}</Button>
           </Link>
         </CardFooter>
       </Card>

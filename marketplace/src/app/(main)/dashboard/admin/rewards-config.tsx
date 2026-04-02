@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { useDict } from '@/i18n/client';
 
 interface ConfigItem {
   id: string;
@@ -11,19 +12,20 @@ interface ConfigItem {
 }
 
 const CONFIG_LABELS: Record<string, string> = {
-  signup_referral_reward: '추천인 가입 보상 ($)',
-  signup_referred_reward: '신규 가입 보상 ($)',
-  sns_share_reward: 'SNS 공유 보상 ($)',
-  max_share_rewards: '최대 공유 보상 횟수',
-  purchase_cashback_rate: '구매 캐시백 비율',
-  review_reward: '리뷰 작성 보상 ($)',
-  referral_level1_rate: '1단계 추천 보상 비율',
-  referral_level2_rate: '2단계 추천 보상 비율',
-  referral_level3_rate: '3단계 추천 보상 비율',
-  max_referral_depth: '최대 추천 단계',
+  signup_referral_reward: 'Referral Signup Reward ($)',
+  signup_referred_reward: 'New User Signup Reward ($)',
+  sns_share_reward: 'SNS Share Reward ($)',
+  max_share_rewards: 'Max Share Rewards Count',
+  purchase_cashback_rate: 'Purchase Cashback Rate',
+  review_reward: 'Review Reward ($)',
+  referral_level1_rate: 'Level 1 Referral Rate',
+  referral_level2_rate: 'Level 2 Referral Rate',
+  referral_level3_rate: 'Level 3 Referral Rate',
+  max_referral_depth: 'Max Referral Depth',
 };
 
 export default function RewardsConfigSection() {
+  const dict = useDict();
   const [configs, setConfigs] = useState<ConfigItem[]>([]);
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -44,7 +46,7 @@ export default function RewardsConfigSection() {
       }
       setEditValues(values);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '설정을 불러오지 못했습니다');
+      setError(err instanceof Error ? err.message : 'Failed to load settings');
     } finally {
       setLoading(false);
     }
@@ -57,7 +59,7 @@ export default function RewardsConfigSection() {
   const handleSave = async (id: string) => {
     const newValue = parseFloat(editValues[id]);
     if (isNaN(newValue)) {
-      setError('유효한 숫자를 입력해주세요');
+      setError(dict.rewardsConfig.invalidNumber);
       return;
     }
 
@@ -74,10 +76,10 @@ export default function RewardsConfigSection() {
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
 
-      setSuccess(`${CONFIG_LABELS[id] ?? id} 설정이 저장되었습니다`);
+      setSuccess(`${CONFIG_LABELS[id] ?? id} setting saved`);
       await fetchConfigs();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '저장에 실패했습니다');
+      setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setSaving(null);
     }
@@ -92,9 +94,9 @@ export default function RewardsConfigSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>리워드 설정</CardTitle>
+        <CardTitle>{dict.rewardsConfig.title}</CardTitle>
         <CardDescription>
-          다단계 추천 보상 및 캐시백 비율을 관리합니다
+          {dict.rewardsConfig.description}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -110,9 +112,9 @@ export default function RewardsConfigSection() {
         )}
 
         {loading ? (
-          <p className="text-muted-foreground text-center py-4">불러오는 중...</p>
+          <p className="text-muted-foreground text-center py-4">{dict.common.loading}</p>
         ) : configs.length === 0 ? (
-          <p className="text-muted-foreground text-center py-4">설정 항목이 없습니다</p>
+          <p className="text-muted-foreground text-center py-4">{dict.rewardsConfig.noConfigs}</p>
         ) : (
           <div className="space-y-3">
             {configs.map((item) => {
@@ -133,7 +135,7 @@ export default function RewardsConfigSection() {
                       {item.description ?? item.id}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      현재: {formatDisplay(item.id, item.value)}
+                      Current: {formatDisplay(item.id, item.value)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -154,7 +156,7 @@ export default function RewardsConfigSection() {
                       disabled={saving === item.id || !changed}
                       className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                     >
-                      {saving === item.id ? '저장 중...' : '저장'}
+                      {saving === item.id ? dict.rewardsConfig.saving : dict.common.save}
                     </button>
                   </div>
                 </div>

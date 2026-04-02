@@ -1,13 +1,7 @@
 {
-  "version": "1.0.0",
-  "project": "cryptointel",
-  "updated_at": "2026-03-16T03:00:00Z",
-  "updated_by": "oracle",
-  "changelog": [
-    {
-      "version": "1.0.0",
-      "date": "2026-03-16",
-      "changes": "버전 관리 체계 도입, version.json 생성"
-    }
-  ]
+  "version": "2.1.0.0",
+  "stage": null,
+  "iteration": null,
+  "buildCounter": 0,
+  "lastUpdated": "2026-04-02T06:00:00Z"
 }

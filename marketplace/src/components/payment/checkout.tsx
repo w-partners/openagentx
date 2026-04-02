@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import PortOneButton from './portone-button';
 import type { PayMethod } from './portone-button';
+import { useDict } from '@/i18n/client';
 
 type Method = 'usdc' | 'paypal' | 'portone' | 'payapp';
 
@@ -14,19 +15,20 @@ interface Props {
 }
 
 const METHODS: { id: Method; label: string; desc: string }[] = [
-  { id: 'usdc', label: 'USDC', desc: '암호화폐 잔액 차감' },
-  { id: 'paypal', label: 'PayPal', desc: '해외 결제' },
-  { id: 'portone', label: '카드 결제 (포트원)', desc: '신용/체크카드, 간편결제' },
-  { id: 'payapp', label: 'PayApp', desc: '모바일 간편결제' },
+  { id: 'usdc', label: 'USD Balance', desc: 'Balance deduction' },
+  { id: 'paypal', label: 'PayPal', desc: 'International payment' },
+  { id: 'portone', label: 'Card Payment (PortOne)', desc: 'Credit/debit card, easy pay' },
+  { id: 'payapp', label: 'PayApp', desc: 'Mobile easy payment' },
 ];
 
 const SUBS: { id: PayMethod; label: string }[] = [
-  { id: 'card', label: '신용/체크카드' }, { id: 'kakaopay', label: '카카오페이' },
-  { id: 'tosspay', label: '토스페이' }, { id: 'naverpay', label: '네이버페이' },
-  { id: 'paypal', label: 'PayPal (포트원)' },
+  { id: 'card', label: 'Credit/Debit Card' }, { id: 'kakaopay', label: 'KakaoPay' },
+  { id: 'tosspay', label: 'TossPay' }, { id: 'naverpay', label: 'NaverPay' },
+  { id: 'paypal', label: 'PayPal (PortOne)' },
 ];
 
 export default function Checkout({ orderId, amount, amountUSDC, productName, buyer, onComplete, onError }: Props) {
+  const dict = useDict();
   const [method, setMethod] = useState<Method>('portone');
   const [sub, setSub] = useState<PayMethod>('card');
   const [busy, setBusy] = useState(false);
@@ -37,28 +39,28 @@ export default function Checkout({ orderId, amount, amountUSDC, productName, buy
       try {
         const r = await fetch('/api/payments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'withdraw', amount: amountUSDC ?? amount }) });
         const d = await r.json();
-        d.success ? onComplete?.('usdc', d.data) : onError?.(d.error ?? 'USDC 결제 실패');
-      } catch { onError?.('USDC 결제 요청 오류'); } finally { setBusy(false); }
+        d.success ? onComplete?.('usdc', d.data) : onError?.(d.error ?? 'Payment failed');
+      } catch { onError?.(dict.checkout.usdcError); } finally { setBusy(false); }
     } else if (method === 'paypal') {
       window.location.href = `/api/stripe?action=create-payment&amount=${amount}&orderId=${orderId}`;
     } else {
-      onError?.('PayApp 결제는 준비 중입니다');
+      onError?.(dict.checkout.payappNotReady);
     }
   };
 
   return (
     <div className="mx-auto max-w-md space-y-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
       <div className="border-b border-gray-100 pb-4">
-        <h2 className="text-lg font-bold text-gray-900">결제하기</h2>
+        <h2 className="text-lg font-bold text-gray-900">{dict.checkout.title}</h2>
         <p className="mt-1 text-sm text-gray-500">{productName}</p>
         <p className="mt-2 text-2xl font-bold text-gray-900">
-          {amount.toLocaleString()}원
-          {amountUSDC != null && <span className="ml-2 text-sm font-normal text-gray-400">({amountUSDC} USDC)</span>}
+          {amount.toLocaleString()} KRW
+          {amountUSDC != null && <span className="ml-2 text-sm font-normal text-gray-400">(${amountUSDC})</span>}
         </p>
       </div>
 
       <fieldset className="space-y-2">
-        <legend className="text-sm font-semibold text-gray-700">결제수단 선택</legend>
+        <legend className="text-sm font-semibold text-gray-700">{dict.checkout.selectMethod}</legend>
         {METHODS.map((m) => (
           <label key={m.id} className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${method === m.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
             <input type="radio" name="pm" value={m.id} checked={method === m.id} onChange={() => setMethod(m.id)} className="h-4 w-4 text-blue-600" />
@@ -69,7 +71,7 @@ export default function Checkout({ orderId, amount, amountUSDC, productName, buy
 
       {method === 'portone' && (
         <div className="space-y-2 rounded-lg bg-gray-50 p-4">
-          <p className="text-xs font-semibold text-gray-600">결제 방법</p>
+          <p className="text-xs font-semibold text-gray-600">{dict.checkout.paymentMethod}</p>
           <div className="flex flex-wrap gap-2">
             {SUBS.map((s) => (
               <button key={s.id} type="button" onClick={() => setSub(s.id)}
@@ -87,11 +89,11 @@ export default function Checkout({ orderId, amount, amountUSDC, productName, buy
       ) : (
         <button type="button" disabled={busy} onClick={handleOther}
           className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
-          {busy ? '처리 중...' : `${METHODS.find((m) => m.id === method)?.label ?? ''} 결제하기`}
+          {busy ? dict.common.processing : `${METHODS.find((m) => m.id === method)?.label ?? ''}`}
         </button>
       )}
 
-      <p className="text-center text-xs text-gray-400">결제 진행 시 서비스 이용약관에 동의하는 것으로 간주됩니다</p>
+      <p className="text-center text-xs text-gray-400">{dict.checkout.termsNote}</p>
     </div>
   );
 }

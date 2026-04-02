@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { useDict } from '@/i18n/client';
 
 interface ShareReward {
   id: string;
@@ -24,13 +25,13 @@ const PLATFORM_LABELS: Record<string, string> = {
   twitter: 'Twitter / X',
   telegram: 'Telegram',
   facebook: 'Facebook',
-  other: '기타',
+  other: 'Other',
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: '대기 중',
-  approved: '승인됨',
-  rejected: '거부됨',
+  pending: 'Pending',
+  approved: 'Approved',
+  rejected: 'Rejected',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -40,6 +41,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function ReferralSection() {
+  const dict = useDict();
   const [data, setData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -81,10 +83,10 @@ export default function ReferralSection() {
         fetchData();
       } else {
         const json = await res.json();
-        setError(json.error ?? '코드 생성 실패');
+        setError(json.error ?? 'Code generation failed');
       }
     } catch {
-      setError('네트워크 오류');
+      setError('Network error');
     } finally {
       setGenerating(false);
     }
@@ -103,11 +105,11 @@ export default function ReferralSection() {
   const referralUrl = data?.code ? `https://openagentx.org?ref=${data.code}` : '';
 
   const twitterShareUrl = data?.code
-    ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(`AI 에이전트 마켓플레이스 OpenAgentX! ${referralUrl}`)}`
+    ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(`AI Agent Marketplace OpenAgentX! ${referralUrl}`)}`
     : '';
 
   const telegramShareUrl = data?.code
-    ? `https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent('AI 에이전트 마켓플레이스 OpenAgentX!')}`
+    ? `https://t.me/share/url?url=${encodeURIComponent(referralUrl)}&text=${encodeURIComponent('AI Agent Marketplace OpenAgentX!')}`
     : '';
 
   const handleSubmitShare = async (e: React.FormEvent) => {
@@ -115,7 +117,7 @@ export default function ReferralSection() {
     setMessage('');
     setError('');
     if (!shareUrl.trim()) {
-      setError('공유 URL을 입력해주세요');
+      setError(dict.referralSection.shareUrlRequired);
       return;
     }
     setSubmitting(true);
@@ -127,14 +129,14 @@ export default function ReferralSection() {
       });
       const json = await res.json();
       if (res.ok) {
-        setMessage('공유 인증이 제출되었습니다. 관리자 확인 후 보상이 지급됩니다.');
+        setMessage(dict.referralSection.shareVerificationSuccess);
         setShareUrl('');
         fetchData();
       } else {
-        setError(json.error ?? '제출 실패');
+        setError(json.error ?? 'Submission failed');
       }
     } catch {
-      setError('네트워크 오류');
+      setError('Network error');
     } finally {
       setSubmitting(false);
     }
@@ -144,10 +146,10 @@ export default function ReferralSection() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>추천 & 공유 보상</CardTitle>
+          <CardTitle>{dict.referralSection.referralReward}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">불러오는 중...</p>
+          <p className="text-sm text-muted-foreground">Loading...</p>
         </CardContent>
       </Card>
     );
@@ -158,9 +160,9 @@ export default function ReferralSection() {
       {/* Referral Code */}
       <Card>
         <CardHeader>
-          <CardTitle>추천 코드</CardTitle>
+          <CardTitle>{dict.referralSection.title}</CardTitle>
           <CardDescription>
-            친구를 초대하면 양쪽 모두 $1.00 크레딧을 받습니다
+            {dict.referralSection.description}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -175,13 +177,13 @@ export default function ReferralSection() {
                   onClick={() => handleCopy(data.code!)}
                   className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-accent transition-colors"
                 >
-                  {copied ? '복사됨!' : '복사'}
+                  {copied ? dict.referralSection.copied : dict.referralSection.copy}
                 </button>
               </div>
 
               {/* Share link */}
               <div className="space-y-2">
-                <label className="text-sm text-muted-foreground">추천 링크</label>
+                <label className="text-sm text-muted-foreground">{dict.referralSection.referralLink}</label>
                 <div className="flex items-center gap-2">
                   <input
                     readOnly
@@ -192,7 +194,7 @@ export default function ReferralSection() {
                     onClick={() => handleCopy(referralUrl)}
                     className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors whitespace-nowrap"
                   >
-                    링크 복사
+                    Copy Link
                   </button>
                 </div>
               </div>
@@ -205,7 +207,7 @@ export default function ReferralSection() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center rounded-md bg-black text-white px-4 py-2 text-sm font-medium hover:bg-black/80 transition-colors"
                 >
-                  Twitter / X 공유
+                  Share on Twitter / X
                 </a>
                 <a
                   href={telegramShareUrl}
@@ -213,24 +215,24 @@ export default function ReferralSection() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center rounded-md bg-[#0088cc] text-white px-4 py-2 text-sm font-medium hover:bg-[#0088cc]/80 transition-colors"
                 >
-                  Telegram 공유
+                  Share on Telegram
                 </a>
                 <button
                   onClick={() => handleCopy(referralUrl)}
                   className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent transition-colors"
                 >
-                  링크 복사
+                  Copy Link
                 </button>
               </div>
 
               {/* Stats */}
               <div className="grid grid-cols-2 gap-4 pt-2 border-t">
                 <div>
-                  <p className="text-sm text-muted-foreground">초대한 사람</p>
-                  <p className="text-xl font-bold">{data.totalReferrals}명</p>
+                  <p className="text-sm text-muted-foreground">{dict.referralSection.invitedCount}</p>
+                  <p className="text-xl font-bold">{data.totalReferrals}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">받은 크레딧</p>
+                  <p className="text-sm text-muted-foreground">{dict.referralSection.earnedCredits}</p>
                   <p className="text-xl font-bold text-primary">$ {data.totalEarned.toFixed(2)}</p>
                 </div>
               </div>
@@ -238,14 +240,14 @@ export default function ReferralSection() {
           ) : (
             <div className="text-center py-4">
               <p className="text-sm text-muted-foreground mb-3">
-                추천 코드를 생성하여 친구를 초대하세요
+                {dict.referralSection.generateDesc}
               </p>
               <button
                 onClick={handleGenerate}
                 disabled={generating}
                 className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                {generating ? '생성 중...' : '추천 코드 생성'}
+                {generating ? dict.referralSection.generating : dict.referralSection.generateCode}
               </button>
               {error && <p className="text-sm text-red-600 dark:text-red-400 mt-2">{error}</p>}
             </div>
@@ -256,9 +258,9 @@ export default function ReferralSection() {
       {/* SNS Share Reward */}
       <Card>
         <CardHeader>
-          <CardTitle>SNS 공유 보상</CardTitle>
+          <CardTitle>{dict.referralSection.snsShareTitle}</CardTitle>
           <CardDescription>
-            OpenAgentX를 SNS에 공유하고 $1.00 크레딧을 받으세요 (최대 5회)
+            Share OpenAgentX on SNS and earn $1.00 credit (up to 5 times)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -272,11 +274,11 @@ export default function ReferralSection() {
                 <option value="twitter">Twitter / X</option>
                 <option value="telegram">Telegram</option>
                 <option value="facebook">Facebook</option>
-                <option value="other">기타</option>
+                <option value="other">Other</option>
               </select>
               <input
                 type="url"
-                placeholder="공유한 게시물 URL"
+                placeholder={dict.referralSection.shareUrlPlaceholder}
                 value={shareUrl}
                 onChange={(e) => setShareUrl(e.target.value)}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -286,11 +288,11 @@ export default function ReferralSection() {
                 disabled={submitting}
                 className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 whitespace-nowrap"
               >
-                {submitting ? '제출 중...' : '인증 제출'}
+                {submitting ? dict.referralSection.submittingVerification : dict.referralSection.submitVerification}
               </button>
             </div>
             <p className="text-xs text-muted-foreground">
-              OpenAgentX를 SNS에 공유한 뒤, 게시물 URL을 입력하여 인증해주세요.
+              Share OpenAgentX on SNS, then enter the post URL to verify.
             </p>
           </form>
           {message && <p className="text-sm text-green-600 dark:text-green-400">{message}</p>}
@@ -299,7 +301,7 @@ export default function ReferralSection() {
           {/* Share history */}
           {data?.shares && data.shares.length > 0 && (
             <div className="border-t pt-4">
-              <h3 className="text-sm font-semibold mb-3">공유 인증 내역</h3>
+              <h3 className="text-sm font-semibold mb-3">{dict.referralSection.shareHistory}</h3>
               <div className="space-y-2">
                 {data.shares.map((share) => (
                   <div
@@ -314,7 +316,7 @@ export default function ReferralSection() {
                         {share.share_url}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(share.created_at).toLocaleDateString('ko-KR')}
+                        {new Date(share.created_at).toLocaleDateString('en-US')}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">

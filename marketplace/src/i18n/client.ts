@@ -40,6 +40,22 @@ export function t(dict: Dictionary, key: string): string {
   return typeof current === 'string' ? current : key;
 }
 
+/** Client-side: detect locale from URL path first, then cookie */
+export function detectClientLocale(): Locale {
+  if (typeof window !== 'undefined') {
+    const segments = window.location.pathname.split('/').filter(Boolean);
+    const first = segments[0];
+    if (first && isLocale(first)) return first;
+  }
+  return getClientLocale();
+}
+
+/** React hook: get dictionary for current locale (URL path based) */
+export function useDict(): Dictionary {
+  const locale = detectClientLocale();
+  return getTranslations(locale);
+}
+
 export {
   SUPPORTED_LOCALES,
   DEFAULT_LOCALE,

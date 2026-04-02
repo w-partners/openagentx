@@ -68,6 +68,17 @@
     ],
     "PostToolUse": [
       {
+        "matcher": "TaskCreate|TaskUpdate",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /home/llm/starian/.claude/hooks/todo-auto.mjs",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      },
+      {
         "matcher": "",
         "hooks": [
           {

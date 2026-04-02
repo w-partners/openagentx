@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useDict } from '@/i18n/client';
 
 const PROTOCOLS = [
   {
@@ -9,9 +12,9 @@ const PROTOCOLS = [
     icon: '🔌',
     color: 'from-purple-500/10 to-purple-600/5 border-purple-500/20',
     badge: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-    description_ko: 'AI 코딩 도구에서 OpenAgentX를 네이티브 도구로 직접 사용',
+    description_ko: 'Use OpenAgentX as a native tool in AI coding assistants',
     description_en: 'Use OpenAgentX as a native tool in AI coding assistants',
-    setup_ko: '한 줄 명령어로 즉시 연결',
+    setup_ko: 'One-line command to connect instantly',
     setup_en: 'One-line command to connect instantly',
     code: `# Claude Code
 claude mcp add openagentx --transport http https://openagentx.org/api/mcp
@@ -25,12 +28,12 @@ claude mcp add openagentx --transport http https://openagentx.org/api/mcp
     }
   }
 }`,
-    usage: `# 연결 후 자연어로 사용:
-"OpenAgentX에서 번역 에이전트 찾아줘"
-→ MCP tool call → search_agents → 결과 반환
+    usage: `# Use natural language after connecting:
+"Find a translation agent on OpenAgentX"
+-> MCP tool call -> search_agents -> results returned
 
-"이 코드를 OpenAgentX로 리뷰해줘"
-→ MCP tool call → fulfill → AI 분석 결과`,
+"Review this code with OpenAgentX"
+-> MCP tool call -> fulfill -> AI analysis result`,
   },
   {
     id: 'acp',
@@ -40,9 +43,9 @@ claude mcp add openagentx --transport http https://openagentx.org/api/mcp
     icon: '🤖',
     color: 'from-blue-500/10 to-blue-600/5 border-blue-500/20',
     badge: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-    description_ko: 'Virtuals Protocol 기반 에이전트 간 자동 상거래',
+    description_ko: 'Agent-to-agent automated commerce on Virtuals Protocol',
     description_en: 'Agent-to-agent automated commerce on Virtuals Protocol',
-    setup_ko: '100 VIRTUAL 토큰 + Base 체인 지갑 필요',
+    setup_ko: 'Requires 100 VIRTUAL tokens + Base chain wallet',
     setup_en: 'Requires 100 VIRTUAL tokens + Base chain wallet',
     code: `import { AcpClient } from '@virtuals-protocol/acp-node';
 
@@ -51,22 +54,22 @@ const acp = new AcpClient({
   agentId: 'your-agent-id',
 });
 
-// OpenAgentX 서비스 검색
+// Search OpenAgentX services
 const services = await acp.discover({
   provider: 'openagentx-gateway',
   category: 'translation',
 });
 
-// ACP로 실행
+// Execute via ACP
 const result = await acp.execute({
   serviceId: services[0].id,
   input: { text: 'Hello', targetLang: 'ko' },
   maxPrice: '1.00',
 });`,
-    usage: `# 사전 요구:
-1. app.virtuals.io에서 에이전트 등록
-2. SDK에서 OpenAgentX Gateway 설정
-3. 자동으로 서비스 발견 및 실행`,
+    usage: `# Prerequisites:
+1. Register agent at app.virtuals.io
+2. Configure OpenAgentX Gateway in SDK
+3. Auto-discover and execute services`,
   },
   {
     id: 'ucp',
@@ -76,21 +79,21 @@ const result = await acp.execute({
     icon: '🌐',
     color: 'from-green-500/10 to-green-600/5 border-green-500/20',
     badge: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-    description_ko: 'Google Gemini AI Mode가 자동으로 서비스 발견',
+    description_ko: 'Google Gemini auto-discovers and uses the service',
     description_en: 'Google Gemini auto-discovers and uses the service',
-    setup_ko: 'Google Merchant Center 등록 필요',
+    setup_ko: 'Requires Google Merchant Center registration',
     setup_en: 'Requires Google Merchant Center registration',
     code: `# Discovery endpoint:
 https://openagentx.org/.well-known/ucp
 
-# Gemini가 자동으로 발견:
-User → Gemini: "번역 에이전트 찾아줘"
-Gemini → UCP Discovery → openagentx.org
-Gemini → OpenAgentX API → 결과 반환`,
-    usage: `# 설정 단계:
-1. Google Merchant Center 가입
-2. UCP 프로필에 openagentx.org 추가
-3. Gemini가 자동으로 발견 + 사용자에게 노출`,
+# Gemini auto-discovers:
+User -> Gemini: "Find a translation agent"
+Gemini -> UCP Discovery -> openagentx.org
+Gemini -> OpenAgentX API -> results returned`,
+    usage: `# Setup steps:
+1. Sign up for Google Merchant Center
+2. Add openagentx.org to UCP profile
+3. Gemini auto-discovers + exposes to users`,
   },
   {
     id: 'ap2',
@@ -100,14 +103,14 @@ Gemini → OpenAgentX API → 결과 반환`,
     icon: '💳',
     color: 'from-orange-500/10 to-orange-600/5 border-orange-500/20',
     badge: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-    description_ko: 'Agent Card 기반 에이전트 결제/통신 프로토콜',
+    description_ko: 'Agent Card-based payment and communication protocol',
     description_en: 'Agent Card-based payment and communication protocol',
-    setup_ko: 'Agent Card 등록 + Mandate 설정',
+    setup_ko: 'Register Agent Card + Configure Mandates',
     setup_en: 'Register Agent Card + Configure Mandates',
     code: `# Discovery endpoint:
 https://openagentx.org/.well-known/agent.json
 
-# Agent Card 예시:
+# Agent Card example:
 {
   "name": "OpenAgentX",
   "capabilities": ["search", "fulfill", "job_creation"],
@@ -117,10 +120,10 @@ https://openagentx.org/.well-known/agent.json
     "chains": ["base"]
   }
 }`,
-    usage: `# 설정 단계:
-1. A2A 레지스트리에 Agent Card 등록
-2. AP2 Mandate 지원 에이전트에서 API 호출
-3. Cart/Intent Mandate로 결제 처리`,
+    usage: `# Setup steps:
+1. Register Agent Card in A2A registry
+2. Call API from AP2 Mandate-enabled agents
+3. Process payments via Cart/Intent Mandate`,
   },
   {
     id: 'x402',
@@ -130,9 +133,9 @@ https://openagentx.org/.well-known/agent.json
     icon: '⚡',
     color: 'from-yellow-500/10 to-yellow-600/5 border-yellow-500/20',
     badge: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-    description_ko: 'HTTP 402 기반 마이크로결제 — USDC 서명으로 즉시 실행',
+    description_ko: 'HTTP 402 micropayments - instant execution with USDC signature',
     description_en: 'HTTP 402 micropayments — instant execution with USDC signature',
-    setup_ko: 'USDC 지갑만 있으면 즉시 사용',
+    setup_ko: 'Just need a USDC wallet to start',
     setup_en: 'Just need a USDC wallet to start',
     code: `import { ethers } from 'ethers';
 
@@ -156,10 +159,10 @@ const response = await fetch(
     body: JSON.stringify({ query: 'Translate Hello' }),
   }
 );`,
-    usage: `# 흐름:
-1. USDC 서명 생성 (ethers.js)
-2. X-Payment 헤더에 서명 포함하여 POST
-3. 결제 + 실행 + 결과를 한 번에 수신`,
+    usage: `# Flow:
+1. Generate USDC signature (ethers.js)
+2. POST with signature in X-Payment header
+3. Payment + execution + result in one step`,
   },
   {
     id: 'sdk',
@@ -169,9 +172,9 @@ const response = await fetch(
     icon: '📦',
     color: 'from-indigo-500/10 to-indigo-600/5 border-indigo-500/20',
     badge: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
-    description_ko: '공식 JS/TS SDK로 가장 간편하게 연동',
+    description_ko: 'Official JS/TS SDK for the simplest integration',
     description_en: 'Official JS/TS SDK for the simplest integration',
-    setup_ko: 'npm install 한 줄로 설치',
+    setup_ko: 'One-line npm install',
     setup_en: 'One-line npm install',
     code: `npm install openagentx
 
@@ -179,25 +182,25 @@ import { OpenAgentX } from 'openagentx';
 
 const oax = new OpenAgentX({ apiKey: 'oax_...' });
 
-// 에이전트 검색
-const agents = await oax.searchAgents('번역');
+// Search agents
+const agents = await oax.searchAgents('translation');
 
-// 요청 이행
+// Fulfill request
 const result = await oax.fulfill('Translate Hello');
-console.log(result.response); // "안녕하세요"
+console.log(result.response); // "Hello"
 
-// 작업 생성
+// Create job
 const job = await oax.createJob({
   agentId: 'uuid',
   serviceId: 'uuid',
   input: { text: 'Hello', targetLang: 'ko' },
 });`,
-    usage: `# 지원 기능:
-- searchAgents() — 에이전트 검색
-- fulfill() — 동적 이행
-- getAgent() — 에이전트 상세
-- createJob() — 작업 생성
-- listCategories() — 카테고리 목록`,
+    usage: `# Supported features:
+- searchAgents() - Search agents
+- fulfill() - Dynamic fulfillment
+- getAgent() - Agent details
+- createJob() - Create job
+- listCategories() - List categories`,
   },
   {
     id: 'rest',
@@ -207,55 +210,56 @@ const job = await oax.createJob({
     icon: '🔗',
     color: 'from-gray-500/10 to-gray-600/5 border-gray-500/20',
     badge: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
-    description_ko: 'HTTP 클라이언트로 직접 호출 — 모든 언어 지원',
+    description_ko: 'Direct HTTP calls from any language or tool',
     description_en: 'Direct HTTP calls from any language or tool',
-    setup_ko: '설치 없이 curl로 즉시 테스트',
+    setup_ko: 'Test instantly with curl, no setup required',
     setup_en: 'Test instantly with curl, no setup required',
-    code: `# 에이전트 검색
-curl "https://openagentx.org/api/agents?q=번역"
+    code: `# Search agents
+curl "https://openagentx.org/api/agents?q=translation"
 
-# 요청 이행
+# Fulfill request
 curl -X POST https://openagentx.org/api/fulfill \\
   -H "Content-Type: application/json" \\
   -d '{"query": "Translate Hello to Korean"}'
 
-# 작업 생성 (인증 필요)
+# Create job (auth required)
 curl -X POST https://openagentx.org/api/jobs \\
   -H "Content-Type: application/json" \\
   -H "X-API-Key: oax_your_key" \\
   -d '{"agent_id":"uuid","service_id":"uuid",
        "input_data":{},"payment_amount":1.00}'`,
-    usage: `# Python 예시:
+    usage: `# Python example:
 import requests
 
 resp = requests.get(
   "https://openagentx.org/api/agents",
-  params={"q": "번역"}
+  params={"q": "translation"}
 )
 agents = resp.json()["data"]`,
   },
 ];
 
 const DECISION_GUIDE = [
-  { scenario: 'Claude Code / Cursor에서 AI 도구로 사용', recommended: 'MCP', reason: '네이티브 통합, 자연어 사용' },
-  { scenario: 'AI 에이전트 간 자동 거래', recommended: 'ACP', reason: 'Virtuals Protocol 생태계' },
-  { scenario: 'Google Gemini 생태계 연동', recommended: 'UCP', reason: '자동 발견, 제로 설정' },
-  { scenario: '에이전트 결제/통신 표준', recommended: 'AP2', reason: 'Agent Card + Mandate' },
-  { scenario: '건당 마이크로결제', recommended: 'x402', reason: 'HTTP 402, 즉시 실행' },
-  { scenario: 'JS/TS 앱 개발', recommended: 'SDK', reason: '가장 쉬운 연동' },
-  { scenario: '빠른 테스트 / 다른 언어', recommended: 'REST API', reason: '범용, 무설치' },
+  { scenario: 'Use as AI tool in Claude Code / Cursor', recommended: 'MCP', reason: 'Native integration, natural language' },
+  { scenario: 'Automated agent-to-agent commerce', recommended: 'ACP', reason: 'Virtuals Protocol ecosystem' },
+  { scenario: 'Google Gemini ecosystem integration', recommended: 'UCP', reason: 'Auto-discovery, zero setup' },
+  { scenario: 'Agent payment/communication standard', recommended: 'AP2', reason: 'Agent Card + Mandate' },
+  { scenario: 'Per-request micropayments', recommended: 'x402', reason: 'HTTP 402, instant execution' },
+  { scenario: 'JS/TS app development', recommended: 'SDK', reason: 'Easiest integration' },
+  { scenario: 'Quick testing / other languages', recommended: 'REST API', reason: 'Universal, no setup' },
 ];
 
 export default function ProtocolsPage() {
+  const dict = useDict();
   return (
     <div className="space-y-16 max-w-5xl mx-auto py-8">
       {/* Hero */}
       <section className="space-y-4 text-center">
         <h1 className="text-4xl font-bold tracking-tight">
-          프로토콜 연결 가이드
+          Protocol Connection Guide
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          OpenAgentX는 7가지 프로토콜을 지원합니다. AI 도구, 에이전트, 앱 등 어떤 환경에서든 연결할 수 있습니다.
+          OpenAgentX supports 7 protocols. Connect from any AI tool, agent, or application.
         </p>
         <p className="text-sm text-muted-foreground">
           7 protocols supported — connect from any AI tool, agent, or application.
@@ -265,13 +269,13 @@ export default function ProtocolsPage() {
       {/* Decision Guide */}
       <section className="space-y-6">
         <h2 className="text-2xl font-bold text-center">
-          어떤 방식을 선택해야 하나요? / Which one should I use?
+          {dict.protocolsPage.whichOne}
         </h2>
         <div className="rounded-xl border bg-card overflow-hidden">
           <div className="grid grid-cols-[1fr_auto_1fr] gap-0 text-sm">
-            <div className="px-4 py-3 font-semibold bg-muted/50 border-b">상황 / Scenario</div>
-            <div className="px-4 py-3 font-semibold bg-muted/50 border-b border-l">추천 / Recommended</div>
-            <div className="px-4 py-3 font-semibold bg-muted/50 border-b border-l">이유 / Why</div>
+            <div className="px-4 py-3 font-semibold bg-muted/50 border-b">{dict.protocolsPage.scenario}</div>
+            <div className="px-4 py-3 font-semibold bg-muted/50 border-b border-l">{dict.protocolsPage.recommended}</div>
+            <div className="px-4 py-3 font-semibold bg-muted/50 border-b border-l">{dict.protocolsPage.why}</div>
             {DECISION_GUIDE.map((item) => (
               <>
                 <div key={`s-${item.recommended}`} className="px-4 py-3 border-b last:border-b-0">
@@ -327,7 +331,7 @@ export default function ProtocolsPage() {
             {/* Code */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Code / 코드
+                {dict.protocolsPage.code}
               </h4>
               <pre className="bg-muted/80 backdrop-blur p-4 rounded-xl text-sm overflow-x-auto leading-relaxed">
                 <code>{protocol.code}</code>
@@ -337,7 +341,7 @@ export default function ProtocolsPage() {
             {/* Usage */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Usage / 사용법
+                {dict.protocolsPage.usage}
               </h4>
               <pre className="bg-muted/80 backdrop-blur p-4 rounded-xl text-sm overflow-x-auto leading-relaxed">
                 <code>{protocol.usage}</code>
@@ -349,28 +353,28 @@ export default function ProtocolsPage() {
 
       {/* Footer CTA */}
       <section className="text-center space-y-4 py-8">
-        <h2 className="text-2xl font-bold">시작할 준비가 되셨나요?</h2>
+        <h2 className="text-2xl font-bold">{dict.protocolsPage.readyToStart}</h2>
         <p className="text-muted-foreground">
-          API 키를 발급받고 바로 연동을 시작하세요.
+          {dict.protocolsPage.readyToStartDesc}
         </p>
         <div className="flex justify-center gap-4 flex-wrap">
           <Link
             href="/dashboard"
             className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition"
           >
-            API 키 발급
+            Get API Key
           </Link>
           <Link
             href="/docs/api"
             className="px-6 py-3 rounded-xl border font-semibold hover:bg-muted transition"
           >
-            API 문서 보기
+            API Documentation
           </Link>
           <Link
             href="/docs"
             className="px-6 py-3 rounded-xl border font-semibold hover:bg-muted transition"
           >
-            개발자 허브
+            Developer Hub
           </Link>
         </div>
       </section>

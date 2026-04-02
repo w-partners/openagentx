@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { useDict } from '@/i18n/client';
 
 interface ShareRewardWithUser {
   id: string;
@@ -20,10 +21,11 @@ const PLATFORM_LABELS: Record<string, string> = {
   twitter: 'Twitter / X',
   telegram: 'Telegram',
   facebook: 'Facebook',
-  other: '기타',
+  other: 'Other',
 };
 
 export default function AdminShareSection() {
+  const dict = useDict();
   const [pending, setPending] = useState<ShareRewardWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export default function AdminShareSection() {
   }, [fetchData]);
 
   const handleApprove = async (shareId: string) => {
-    if (!confirm('이 공유 인증을 승인하시겠습니까?')) return;
+    if (!confirm('Approve?')) return;
     setProcessing(shareId);
     try {
       const res = await fetch('/api/referral', {
@@ -63,17 +65,17 @@ export default function AdminShareSection() {
         fetchData();
       } else {
         const json = await res.json();
-        alert(json.error ?? '처리 중 오류 발생');
+        alert(json.error ?? 'Error');
       }
     } catch {
-      alert('네트워크 오류');
+      alert(dict.common.networkError);
     } finally {
       setProcessing(null);
     }
   };
 
   const handleReject = async (shareId: string) => {
-    if (!confirm('이 공유 인증을 거부하시겠습니까?')) return;
+    if (!confirm('Reject?')) return;
     setProcessing(shareId);
     try {
       const res = await fetch('/api/referral', {
@@ -85,10 +87,10 @@ export default function AdminShareSection() {
         fetchData();
       } else {
         const json = await res.json();
-        alert(json.error ?? '처리 중 오류 발생');
+        alert(json.error ?? 'Error occurred');
       }
     } catch {
-      alert('네트워크 오류');
+      alert('Network error');
     } finally {
       setProcessing(null);
     }
@@ -98,10 +100,10 @@ export default function AdminShareSection() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>공유 인증 관리</CardTitle>
+          <CardTitle>{dict.adminShare.title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">불러오는 중...</p>
+          <p className="text-sm text-muted-foreground">{dict.common.loading}</p>
         </CardContent>
       </Card>
     );
@@ -110,15 +112,15 @@ export default function AdminShareSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>공유 인증 관리</CardTitle>
+        <CardTitle>Share Verification Management</CardTitle>
         <CardDescription>
-          SNS 공유 인증 요청을 확인하고 승인/거부하세요 (대기 중: {pending.length}건)
+          Review and approve/reject SNS share verification requests (Pending: {pending.length})
         </CardDescription>
       </CardHeader>
       <CardContent>
         {pending.length === 0 ? (
           <p className="text-muted-foreground text-center py-4">
-            대기 중인 공유 인증이 없습니다
+            {dict.adminShare.noPending}
           </p>
         ) : (
           <div className="space-y-3">
@@ -139,7 +141,7 @@ export default function AdminShareSection() {
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     <span>{PLATFORM_LABELS[share.platform] ?? share.platform}</span>
                     <span>$ {Number(share.reward_amount).toFixed(2)}</span>
-                    <span>{new Date(share.created_at).toLocaleDateString('ko-KR')}</span>
+                    <span>{new Date(share.created_at).toLocaleDateString('en-US')}</span>
                   </div>
                   <a
                     href={share.share_url}
@@ -156,14 +158,14 @@ export default function AdminShareSection() {
                     disabled={processing === share.id}
                     className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
-                    {processing === share.id ? '처리 중...' : '승인'}
+                    {processing === share.id ? dict.common.processing : dict.adminPage.approve}
                   </button>
                   <button
                     onClick={() => handleReject(share.id)}
                     disabled={processing === share.id}
                     className="inline-flex items-center justify-center rounded-md bg-destructive/10 text-destructive px-3 py-1.5 text-xs font-medium hover:bg-destructive/20 transition-colors disabled:opacity-50"
                   >
-                    거부
+                    Reject
                   </button>
                 </div>
               </div>

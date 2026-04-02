@@ -1,5 +1,8 @@
+'use client';
+
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useDict } from '@/i18n/client';
 
 // Placeholder growth metrics (replace with API fetch)
 const metrics = {
@@ -14,11 +17,11 @@ const metrics = {
 };
 
 const trafficSources = [
-  { source: '직접 접속', key: 'direct', count: 1200, percent: 42 },
-  { source: 'ACP 게이트웨이', key: 'acp', count: 892, percent: 31 },
-  { source: 'UCP 디스커버리', key: 'ucp', count: 156, percent: 5 },
-  { source: 'AP2 프로토콜', key: 'ap2', count: 89, percent: 3 },
-  { source: '기타 (검색엔진 등)', key: 'other', count: 543, percent: 19 },
+  { source: 'Direct Access', key: 'direct', count: 1200, percent: 42 },
+  { source: 'ACP Gateway', key: 'acp', count: 892, percent: 31 },
+  { source: 'UCP Discovery', key: 'ucp', count: 156, percent: 5 },
+  { source: 'AP2 Protocol', key: 'ap2', count: 89, percent: 3 },
+  { source: 'Other (Search engines etc.)', key: 'other', count: 543, percent: 19 },
 ];
 
 const weeklyTrend = [
@@ -37,15 +40,16 @@ const topAgents = [
 ];
 
 export default function GrowthDashboardPage() {
+  const dict = useDict();
   return (
     <div className="space-y-8">
       <div className="space-y-2">
         <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-bold">성장 대시보드</h1>
-          <Badge variant="destructive">관리자 전용</Badge>
+          <h1 className="text-3xl font-bold">{dict.growthPage.title}</h1>
+          <Badge variant="destructive">{dict.growthPage.adminOnly}</Badge>
         </div>
         <p className="text-muted-foreground">
-          플랫폼 성장 지표 및 트래픽 소스를 모니터링합니다
+          {dict.growthPage.description}
         </p>
       </div>
 
@@ -53,43 +57,43 @@ export default function GrowthDashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <Card size="sm">
           <CardHeader>
-            <CardDescription>등록 에이전트</CardDescription>
-            <CardTitle>{metrics.registeredAgents}개</CardTitle>
+            <CardDescription>{dict.growthPage.registeredAgents}</CardDescription>
+            <CardTitle>{metrics.registeredAgents}</CardTitle>
           </CardHeader>
         </Card>
         <Card size="sm">
           <CardHeader>
-            <CardDescription>활성 사용자</CardDescription>
-            <CardTitle>{metrics.activeUsers.toLocaleString()}명</CardTitle>
+            <CardDescription>{dict.growthPage.activeUsers}</CardDescription>
+            <CardTitle>{metrics.activeUsers.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
         <Card size="sm">
           <CardHeader>
-            <CardDescription>완료된 작업</CardDescription>
-            <CardTitle>{metrics.jobsCompleted.toLocaleString()}건</CardTitle>
+            <CardDescription>{dict.growthPage.completedJobs}</CardDescription>
+            <CardTitle>{metrics.jobsCompleted.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
         <Card size="sm">
           <CardHeader>
-            <CardDescription>총 GMV</CardDescription>
-            <CardTitle>{metrics.gmvUsdc.toLocaleString()} USDC</CardTitle>
+            <CardDescription>{dict.growthPage.totalGmv}</CardDescription>
+            <CardTitle>${metrics.gmvUsdc.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
         <Card size="sm">
           <CardHeader>
-            <CardDescription>ACP 게이트웨이 트래픽</CardDescription>
-            <CardTitle>{metrics.acpGatewayTraffic.toLocaleString()}건</CardTitle>
+            <CardDescription>{dict.growthPage.acpTraffic}</CardDescription>
+            <CardTitle>{metrics.acpGatewayTraffic.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
         <Card size="sm">
           <CardHeader>
-            <CardDescription>UCP 디스커버리 히트</CardDescription>
-            <CardTitle>{metrics.ucpDiscoveryHits.toLocaleString()}건</CardTitle>
+            <CardDescription>{dict.growthPage.ucpDiscovery}</CardDescription>
+            <CardTitle>{metrics.ucpDiscoveryHits.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
         <Card size="sm">
           <CardHeader>
-            <CardDescription>월간 성장률</CardDescription>
+            <CardDescription>{dict.growthPage.monthlyGrowth}</CardDescription>
             <CardTitle className="text-green-600 dark:text-green-400">
               +{metrics.monthlyGrowthRate}%
             </CardTitle>
@@ -97,7 +101,7 @@ export default function GrowthDashboardPage() {
         </Card>
         <Card size="sm">
           <CardHeader>
-            <CardDescription>평균 작업 단가</CardDescription>
+            <CardDescription>{dict.growthPage.avgJobValue}</CardDescription>
             <CardTitle>${metrics.avgJobValue}</CardTitle>
           </CardHeader>
         </Card>
@@ -106,8 +110,8 @@ export default function GrowthDashboardPage() {
       {/* Traffic Sources */}
       <Card>
         <CardHeader>
-          <CardTitle>트래픽 소스 분석</CardTitle>
-          <CardDescription>유입 경로별 트래픽 분포</CardDescription>
+          <CardTitle>{dict.growthPage.trafficSources}</CardTitle>
+          <CardDescription>{dict.growthPage.trafficSourcesDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -116,7 +120,7 @@ export default function GrowthDashboardPage() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">{src.source}</span>
                   <span className="text-muted-foreground">
-                    {src.count.toLocaleString()}건 ({src.percent}%)
+                    {src.count.toLocaleString()} ({src.percent}%)
                   </span>
                 </div>
                 <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -134,23 +138,23 @@ export default function GrowthDashboardPage() {
       {/* Weekly Trend (placeholder table) */}
       <Card>
         <CardHeader>
-          <CardTitle>주간 성장 추이</CardTitle>
-          <CardDescription>최근 4주간 핵심 지표 변화</CardDescription>
+          <CardTitle>{dict.growthPage.weeklyTrend}</CardTitle>
+          <CardDescription>{dict.growthPage.weeklyTrendDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground pb-2 border-b">
-              <span>주차</span>
-              <span>에이전트</span>
-              <span>사용자</span>
-              <span>작업 수</span>
+              <span>Week</span>
+              <span>Agents</span>
+              <span>Users</span>
+              <span>Jobs</span>
             </div>
             {weeklyTrend.map((row) => (
               <div key={row.week} className="grid grid-cols-4 gap-4 text-sm py-2 border-b last:border-0">
                 <span className="font-medium">{row.week}</span>
-                <span>{row.agents}개</span>
-                <span>{row.users.toLocaleString()}명</span>
-                <span>{row.jobs.toLocaleString()}건</span>
+                <span>{row.agents}</span>
+                <span>{row.users.toLocaleString()}</span>
+                <span>{row.jobs.toLocaleString()}</span>
               </div>
             ))}
           </div>
@@ -160,21 +164,21 @@ export default function GrowthDashboardPage() {
       {/* Top Performing Agents */}
       <Card>
         <CardHeader>
-          <CardTitle>상위 에이전트</CardTitle>
-          <CardDescription>수익 기준 상위 5개 에이전트</CardDescription>
+          <CardTitle>{dict.growthPage.topAgents}</CardTitle>
+          <CardDescription>{dict.growthPage.topAgentsDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             <div className="grid grid-cols-4 gap-4 text-sm font-medium text-muted-foreground pb-2 border-b">
-              <span>에이전트</span>
-              <span>완료 작업</span>
-              <span>수익 (USDC)</span>
-              <span>평점</span>
+              <span>Agent</span>
+              <span>Completed Jobs</span>
+              <span>Revenue (USD)</span>
+              <span>Rating</span>
             </div>
             {topAgents.map((agent) => (
               <div key={agent.name} className="grid grid-cols-4 gap-4 text-sm py-2 border-b last:border-0">
                 <span className="font-medium">{agent.name}</span>
-                <span>{agent.jobs.toLocaleString()}건</span>
+                <span>{agent.jobs.toLocaleString()}</span>
                 <span>{agent.revenue.toLocaleString()}</span>
                 <span>{agent.rating.toFixed(1)}</span>
               </div>
@@ -189,22 +193,22 @@ export default function GrowthDashboardPage() {
           href="/dashboard/admin"
           className="rounded-lg border bg-card p-6 text-center hover:shadow-lg transition-shadow"
         >
-          <p className="font-semibold">관리자 대시보드</p>
-          <p className="text-sm text-muted-foreground mt-1">전체 관리 페이지로 이동</p>
+          <p className="font-semibold">{dict.growthPage.adminDashboard}</p>
+          <p className="text-sm text-muted-foreground mt-1">{dict.growthPage.adminDashboardDesc}</p>
         </a>
         <a
           href="/agents"
           className="rounded-lg border bg-card p-6 text-center hover:shadow-lg transition-shadow"
         >
-          <p className="font-semibold">에이전트 목록</p>
-          <p className="text-sm text-muted-foreground mt-1">등록된 에이전트 확인</p>
+          <p className="font-semibold">{dict.growthPage.agentList}</p>
+          <p className="text-sm text-muted-foreground mt-1">{dict.growthPage.agentListDesc}</p>
         </a>
         <a
           href="/builders"
           className="rounded-lg border bg-card p-6 text-center hover:shadow-lg transition-shadow"
         >
-          <p className="font-semibold">파운딩 빌더</p>
-          <p className="text-sm text-muted-foreground mt-1">빌더 프로그램 현황</p>
+          <p className="font-semibold">{dict.growthPage.foundingBuilders}</p>
+          <p className="text-sm text-muted-foreground mt-1">{dict.growthPage.foundingBuildersDesc}</p>
         </a>
       </div>
     </div>

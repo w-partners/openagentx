@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { useDict } from '@/i18n/client';
 
 interface RewardItem {
   id: string;
@@ -17,13 +18,14 @@ interface RewardStats {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  referral_commission: '추천 수수료',
-  purchase_cashback: '구매 캐시백',
-  review_reward: '리뷰 보상',
-  signup_referral: '가입 추천 보상',
+  referral_commission: 'Referral Commission',
+  purchase_cashback: 'Purchase Cashback',
+  review_reward: 'Review Reward',
+  signup_referral: 'Signup Referral Bonus',
 };
 
 export default function RewardSection() {
+  const dict = useDict();
   const [rewards, setRewards] = useState<RewardItem[]>([]);
   const [stats, setStats] = useState<RewardStats | null>(null);
   const [total, setTotal] = useState(0);
@@ -50,7 +52,7 @@ export default function RewardSection() {
   }, [fetchRewards]);
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('ko-KR', {
+    return new Date(dateStr).toLocaleDateString('en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -60,19 +62,19 @@ export default function RewardSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>내 리워드</CardTitle>
-        <CardDescription>적립된 보상 내역을 확인하세요</CardDescription>
+        <CardTitle>{dict.rewardSection.title}</CardTitle>
+        <CardDescription>{dict.rewardSection.description}</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <p className="text-muted-foreground text-center py-4">불러오는 중...</p>
+          <p className="text-muted-foreground text-center py-4">{dict.common.loading}</p>
         ) : (
           <div className="space-y-6">
             {/* Stats summary */}
             {stats && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="rounded-lg border p-3 text-center">
-                  <p className="text-xs text-muted-foreground">총 적립</p>
+                  <p className="text-xs text-muted-foreground">{dict.rewardSection.totalEarned}</p>
                   <p className="text-lg font-bold text-primary">
                     ${stats.totalEarned.toFixed(2)}
                   </p>
@@ -83,7 +85,7 @@ export default function RewardSection() {
                       {TYPE_LABELS[bt.type] ?? bt.type}
                     </p>
                     <p className="text-sm font-semibold">${bt.total.toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground">{bt.count}회</p>
+                    <p className="text-xs text-muted-foreground">{bt.count} times</p>
                   </div>
                 ))}
               </div>
@@ -92,12 +94,12 @@ export default function RewardSection() {
             {/* Reward history */}
             {rewards.length === 0 ? (
               <p className="text-muted-foreground text-center py-4">
-                아직 리워드 내역이 없습니다
+                {dict.rewardSection.noRewards}
               </p>
             ) : (
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">
-                  총 {total}건의 리워드 내역
+                  {total} reward records total
                 </p>
                 {rewards.map((reward) => (
                   <div

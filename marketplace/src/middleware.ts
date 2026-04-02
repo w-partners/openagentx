@@ -1,16 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authMiddleware } from '@/lib/auth/middleware';
-import {
-  SUPPORTED_LOCALES,
-  DEFAULT_LOCALE,
-  LOCALE_COOKIE,
-  isLocale,
-  detectLocaleFromHeader,
-  getLocaleFromPath,
-  type Locale,
-} from '@/i18n/config';
 
-export const runtime = 'nodejs';
+const SUPPORTED_LOCALES = ['en', 'ko', 'ja', 'zh', 'es', 'fr'] as const;
+type Locale = (typeof SUPPORTED_LOCALES)[number];
+const DEFAULT_LOCALE: Locale = 'en';
+const LOCALE_COOKIE = 'NEXT_LOCALE';
+
+function isLocale(value: string): value is Locale {
+  return (SUPPORTED_LOCALES as readonly string[]).includes(value);
+}
+
+function getLocaleFromPath(pathname: string): Locale | null {
+  const segments = pathname.split('/').filter(Boolean);
+  const first = segments[0];
+  if (first && isLocale(first)) return first;
+  return null;
+}
+
+function detectLocaleFromHeader(acceptLanguage: string | null): Locale {
+  if (!acceptLanguage) return DEFAULT_LOCALE;
+  const languages = acceptLanguage
+    .split(',')
+    .map((part) => {
+      const [lang, q] = part.trim().split(';q=');
+      return { lang: lang.trim().toLowerCase(), q: q ? parseFloat(q) : 1 };
+    })
+    .sort((a, b) => b.q - a.q);
+  for (const { lang } of languages) {
+    const short = lang.split('-')[0];
+    if (isLocale(short)) return short;
+    if (lang.startsWith('zh')) return 'zh';
+  }
+  return DEFAULT_LOCALE;
+}
 
 /** Paths that should never be locale-prefixed */
 const IGNORED_PREFIXES = ['/api/', '/_next/', '/favicon.ico', '/.well-known/', '/chat'];
@@ -19,30 +40,83 @@ function shouldIgnore(pathname: string): boolean {
   return IGNORED_PREFIXES.some((p) => pathname.startsWith(p));
 }
 
+/**
+ * In-memory cache for enabled languages.
+ * Middleware runs on Edge Runtime, so we cache to avoid DB calls per request.
+ * The cache is refreshed via the internal API endpoint.
+ */
+let _enabledLangsCache: { langs: string[]; defaultLang: string; ts: number } | null = null;
+const CACHE_TTL = 60_000; // 60 seconds
+
+async function getEnabledLangs(request: NextRequest): Promise<{ langs: string[]; defaultLang: string }> {
+  if (_enabledLangsCache && Date.now() - _enabledLangsCache.ts < CACHE_TTL) {
+    return _enabledLangsCache;
+  }
+  try {
+    // Use internal fetch to API (with admin cookie forwarded for auth)
+    const url = new URL('/api/admin/settings/languages', request.nextUrl.origin);
+    const res = await fetch(url.toString(), {
+      headers: { 'x-internal': '1' },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const result = {
+        langs: data.enabled_languages || SUPPORTED_LOCALES.slice(),
+        defaultLang: data.default_language || DEFAULT_LOCALE,
+        ts: Date.now(),
+      };
+      _enabledLangsCache = result;
+      return result;
+    }
+  } catch {
+    // fallback
+  }
+  return { langs: SUPPORTED_LOCALES.slice() as unknown as string[], defaultLang: DEFAULT_LOCALE };
+}
+
+/**
+ * Check if a locale is enabled; if not, return the default locale.
+ */
+function resolveLocale(locale: Locale, enabledLangs: string[], defaultLang: string): Locale {
+  if (enabledLangs.includes(locale)) return locale;
+  if (isLocale(defaultLang)) return defaultLang;
+  return DEFAULT_LOCALE;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip locale logic for API routes, static assets, etc.
   if (shouldIgnore(pathname)) {
-    // Still apply auth middleware for API routes
-    if (pathname.startsWith('/api/')) {
-      const result = await authMiddleware(request);
-      if (result) return result;
-    }
     return NextResponse.next();
   }
 
-  // Check if URL already has a locale prefix
+  const { langs: enabledLangs, defaultLang } = await getEnabledLangs(request);
   const pathLocale = getLocaleFromPath(pathname);
 
   if (pathLocale) {
-    // URL has locale prefix: strip it for routing, set cookie
+    // If locale in URL is disabled, redirect to default language
+    const resolved = resolveLocale(pathLocale, enabledLangs, defaultLang);
+    if (resolved !== pathLocale) {
+      const strippedPath = '/' + pathname.split('/').filter(Boolean).slice(1).join('/') || '/';
+      const url = request.nextUrl.clone();
+      url.pathname = `/${resolved}${strippedPath === '/' ? '' : strippedPath}`;
+      const response = NextResponse.redirect(url);
+      response.cookies.set(LOCALE_COOKIE, resolved, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: 'lax',
+      });
+      return response;
+    }
+
     const strippedPath = '/' + pathname.split('/').filter(Boolean).slice(1).join('/') || '/';
     const url = request.nextUrl.clone();
     url.pathname = strippedPath;
 
-    // Preserve query string
-    const response = NextResponse.rewrite(url);
+    const headers = new Headers(request.headers);
+    headers.set('x-locale', pathLocale);
+
+    const response = NextResponse.rewrite(url, { request: { headers } });
     response.cookies.set(LOCALE_COOKIE, pathLocale, {
       path: '/',
       maxAge: 60 * 60 * 24 * 365,
@@ -51,20 +125,18 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // No locale prefix: detect and redirect
   let locale: Locale = DEFAULT_LOCALE;
-
-  // 1. Check cookie
   const cookieLocale = request.cookies.get(LOCALE_COOKIE)?.value;
   if (cookieLocale && isLocale(cookieLocale)) {
     locale = cookieLocale;
   } else {
-    // 2. Detect from Accept-Language header
     const acceptLang = request.headers.get('accept-language');
     locale = detectLocaleFromHeader(acceptLang);
   }
 
-  // Redirect to locale-prefixed URL
+  // Ensure locale is enabled
+  locale = resolveLocale(locale, enabledLangs, defaultLang);
+
   const url = request.nextUrl.clone();
   url.pathname = `/${locale}${pathname === '/' ? '' : pathname}`;
   const response = NextResponse.redirect(url);
@@ -77,13 +149,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };

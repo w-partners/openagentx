@@ -6,44 +6,46 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { useDict } from '@/i18n/client';
 
 const FOUNDING_LIMIT = 50;
 
 const BENEFITS = [
   {
-    title: '수수료 0% (6개월)',
-    description: '파운딩 빌더는 6개월간 플랫폼 수수료가 완전 면제됩니다. 수익 전액을 가져가세요.',
+    title: '0% Commission (6 months)',
+    description: 'Founding builders enjoy premium visibility without setting any visibility commission for 6 months. Keep 100% of your revenue.',
   },
   {
-    title: '파운딩 빌더 특별 배지',
-    description: '프로필과 에이전트에 파운딩 빌더 배지가 영구 표시됩니다. 신뢰도와 가시성이 높아집니다.',
+    title: 'Founding Builder Badge',
+    description: 'A permanent founding builder badge on your profile and agents. Boosts credibility and visibility.',
   },
   {
-    title: '검색 우선 노출',
-    description: '마켓플레이스 검색 결과에서 파운딩 빌더의 에이전트가 우선 노출됩니다.',
+    title: 'Priority Search Ranking',
+    description: 'Founding builder agents get priority placement in marketplace search results.',
   },
   {
-    title: '전용 디스코드 채널',
-    description: '파운딩 빌더 전용 채널에서 팀과 직접 소통하고, 기능 요청을 우선 반영받습니다.',
+    title: 'Exclusive Discord Channel',
+    description: 'Direct communication with the team in a founders-only channel. Priority feature requests.',
   },
   {
-    title: '얼리 액세스',
-    description: 'UCP, AP2, x402 등 새로운 프로토콜 지원을 가장 먼저 테스트할 수 있습니다.',
+    title: 'Early Access',
+    description: 'Be the first to test new protocol support: UCP, AP2, x402, and more.',
   },
   {
-    title: '공동 마케팅',
-    description: 'OpenAgentX 공식 채널에서 파운딩 빌더의 에이전트를 소개하고 홍보합니다.',
+    title: 'Co-Marketing',
+    description: 'We promote founding builder agents on official OpenAgentX channels.',
   },
 ];
 
 const STEPS = [
-  { step: 1, title: '에이전트 등록', description: '마켓플레이스에 AI 에이전트를 등록하세요.' },
-  { step: 2, title: '파운딩 빌더 신청', description: '등록 후 파운딩 빌더 프로그램에 신청합니다.' },
-  { step: 3, title: '검토 및 승인', description: '팀이 검토 후 24시간 이내에 승인합니다.' },
-  { step: 4, title: '혜택 시작', description: '승인 즉시 모든 파운딩 빌더 혜택이 적용됩니다.' },
+  { step: 1, title: 'Register Agent', description: 'Register your AI agent on the marketplace.' },
+  { step: 2, title: 'Apply for Founding Builder', description: 'Apply for the founding builder program after registration.' },
+  { step: 3, title: 'Review & Approval', description: 'Our team reviews and approves within 24 hours.' },
+  { step: 4, title: 'Benefits Start', description: 'All founding builder benefits apply immediately upon approval.' },
 ];
 
 export default function BuildersPage() {
+  const dict = useDict();
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
@@ -58,25 +60,25 @@ export default function BuildersPage() {
       {/* Hero */}
       <section className="text-center space-y-6">
         <Badge variant="secondary" className="text-sm px-4 py-1.5">
-          {FOUNDING_LIMIT}명 선착순
+          First {FOUNDING_LIMIT} Only
         </Badge>
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-          파운딩 빌더 프로그램
+          Founding Builder Program
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          OpenAgentX의 첫 번째 빌더가 되세요.
-          6개월간 수수료 0%, 특별 배지, 우선 노출 혜택을 제공합니다.
+          Be among the first builders on OpenAgentX.
+          Enjoy 0% commission for 6 months, a special badge, and priority exposure.
         </p>
         <div className="flex justify-center gap-4">
           <Link href="/agents/register">
-            <Button size="lg">에이전트 등록하고 신청하기</Button>
+            <Button size="lg">{dict.buildersPage.registerAndApply}</Button>
           </Link>
         </div>
       </section>
 
       {/* Benefits */}
       <section className="space-y-6">
-        <h2 className="text-2xl font-bold text-center">파운딩 빌더 혜택</h2>
+        <h2 className="text-2xl font-bold text-center">{dict.buildersPage.benefits}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {BENEFITS.map((benefit) => (
             <Card key={benefit.title}>
@@ -93,7 +95,7 @@ export default function BuildersPage() {
 
       {/* How it works */}
       <section className="space-y-6">
-        <h2 className="text-2xl font-bold text-center">참여 방법</h2>
+        <h2 className="text-2xl font-bold text-center">{dict.buildersPage.howToJoin}</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {STEPS.map((item) => (
             <div key={item.step} className="text-center space-y-2 rounded-xl border p-6">
@@ -109,39 +111,39 @@ export default function BuildersPage() {
 
       {/* Countdown / Urgency */}
       <section className="text-center space-y-4 py-12 rounded-xl border bg-muted/30">
-        <h2 className="text-2xl font-bold">선착순 {FOUNDING_LIMIT}명 한정</h2>
+        <h2 className="text-2xl font-bold">Limited to First {FOUNDING_LIMIT}</h2>
         <p className="text-muted-foreground max-w-lg mx-auto">
-          파운딩 빌더 자리가 차면 프로그램이 마감됩니다.
-          일찍 참여할수록 더 큰 혜택을 누리세요.
+          The program closes once all founding builder spots are filled.
+          The earlier you join, the greater the benefits.
         </p>
         <div className="flex justify-center gap-8">
           <div className="text-center">
             <div className="text-3xl font-bold text-primary">{FOUNDING_LIMIT}</div>
-            <div className="text-sm text-muted-foreground">총 자리</div>
+            <div className="text-sm text-muted-foreground">Total Spots</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-primary">0%</div>
-            <div className="text-sm text-muted-foreground">수수료 (6개월)</div>
+            <div className="text-sm text-muted-foreground">Commission (6 months)</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary">6개월</div>
-            <div className="text-sm text-muted-foreground">혜택 기간</div>
+            <div className="text-3xl font-bold text-primary">6 months</div>
+            <div className="text-sm text-muted-foreground">Benefit Period</div>
           </div>
         </div>
       </section>
 
       {/* Early interest form */}
       <section className="max-w-md mx-auto space-y-4">
-        <h2 className="text-xl font-bold text-center">사전 관심 등록</h2>
+        <h2 className="text-xl font-bold text-center">{dict.buildersPage.earlyInterest}</h2>
         <p className="text-sm text-muted-foreground text-center">
-          이메일을 남겨주시면 파운딩 빌더 프로그램 오픈 시 가장 먼저 알려드립니다.
+          Leave your email and we will notify you first when the founding builder program opens.
         </p>
         {submitted ? (
           <Card>
             <CardContent className="py-6 text-center">
-              <p className="font-semibold">등록 완료!</p>
+              <p className="font-semibold">{dict.buildersPage.registrationComplete}</p>
               <p className="text-sm text-muted-foreground mt-1">
-                프로그램 오픈 시 이메일로 안내드리겠습니다.
+                {dict.buildersPage.registrationCompleteDesc}
               </p>
             </CardContent>
           </Card>
@@ -149,28 +151,28 @@ export default function BuildersPage() {
           <form onSubmit={handleSubmit} className="flex gap-2">
             <Input
               type="email"
-              placeholder="이메일 주소"
+              placeholder={dict.buildersPage.emailPlaceholder}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <Button type="submit">등록</Button>
+            <Button type="submit">{dict.buildersPage.registerBtn}</Button>
           </form>
         )}
       </section>
 
       {/* CTA */}
       <section className="text-center space-y-4">
-        <h2 className="text-2xl font-bold">지금 바로 시작하세요</h2>
+        <h2 className="text-2xl font-bold">{dict.buildersPage.startNow}</h2>
         <p className="text-muted-foreground">
-          AI 에이전트를 등록하고 파운딩 빌더가 되면, 수수료 0%로 수익을 극대화할 수 있습니다.
+          Register your AI agent and become a founding builder to maximize revenue with 0% commission.
         </p>
         <div className="flex justify-center gap-4">
           <Link href="/agents/register">
-            <Button>에이전트 등록</Button>
+            <Button>{dict.buildersPage.registerAgentBtn}</Button>
           </Link>
           <Link href="/agents">
-            <Button variant="outline">마켓플레이스 둘러보기</Button>
+            <Button variant="outline">{dict.buildersPage.browseMarketplace}</Button>
           </Link>
         </div>
       </section>

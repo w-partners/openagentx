@@ -20,78 +20,78 @@ export type ServiceCategory = (typeof SERVICE_CATEGORIES)[number];
 // --- UI Labels ---
 
 export const CATEGORY_LABELS: Record<string, string> = {
-  coding: '코딩/개발',
-  data_analysis: '데이터 분석',
-  content_creation: '콘텐츠 생성',
-  translation: '번역/로컬라이제이션',
-  marketing: '마케팅/SEO',
-  customer_service: '고객 서비스',
-  research: '리서치/조사',
-  finance: '금융/투자 분석',
-  crypto: '암호화폐/블록체인',
-  design: '디자인/이미지',
-  education: '교육/튜터링',
-  automation: '자동화/워크플로우',
+  coding: 'Coding & Development',
+  data_analysis: 'Data Analysis',
+  content_creation: 'Content Creation',
+  translation: 'Translation & Localization',
+  marketing: 'Marketing & SEO',
+  customer_service: 'Customer Service',
+  research: 'Research',
+  finance: 'Finance & Investment',
+  crypto: 'Crypto & Blockchain',
+  design: 'Design & Image',
+  education: 'Education & Tutoring',
+  automation: 'Automation & Workflow',
 };
 
 export const AUCTION_STATUS_LABELS: Record<string, string> = {
-  open: '진행 중',
-  awarded: '낙찰',
-  expired: '만료',
-  cancelled: '취소',
+  open: 'In Progress',
+  awarded: 'Awarded',
+  expired: 'Expired',
+  cancelled: 'Cancelled',
 };
 
 export const BID_STATUS_LABELS: Record<string, string> = {
-  pending: '대기',
-  selected: '낙찰',
-  rejected: '미선정',
-  refunded: '환불됨',
+  pending: 'Pending',
+  selected: 'Awarded',
+  rejected: 'Not Selected',
+  refunded: 'Refunded',
 };
 
 export const BOUNTY_STATUS_LABELS: Record<string, string> = {
-  open: '모집 중',
-  pending_match: '매칭 중',
-  claimed: '진행 중',
-  fulfilled: '완료',
-  cancelled: '취소',
+  open: 'Open',
+  pending_match: 'Pending Match',
+  claimed: 'In Progress',
+  fulfilled: 'Completed',
+  cancelled: 'Cancelled',
 };
 
 export const MATCHING_STATUS_LABELS: Record<string, string> = {
-  waiting: '대기 중',
-  matched: '매칭 완료',
-  cancelled: '취소됨',
-  expired: '만료됨',
+  waiting: 'Waiting',
+  matched: 'Matched',
+  cancelled: 'Cancelled',
+  expired: 'Expired',
 };
 
 export const URGENCY_LABELS: Record<string, string> = {
-  low: '낮음',
-  normal: '보통',
-  urgent: '긴급',
-  critical: '매우 긴급',
+  low: 'Low',
+  normal: 'Normal',
+  urgent: 'Urgent',
+  critical: 'Critical',
 };
 
 export const CHAIN_STATUS_LABELS: Record<string, string> = {
-  running: '실행 중',
-  completed: '완료',
-  failed: '실패',
-  cancelled: '취소',
+  running: 'Running',
+  completed: 'Completed',
+  failed: 'Failed',
+  cancelled: 'Cancelled',
 };
 
 export const CHAIN_STEP_TYPE_LABELS: Record<string, string> = {
-  fixed: '고정가격',
-  auction: '역경매',
-  matching: '실시간 매칭',
-  fulfill: 'AI 처리',
+  fixed: 'Fixed Price',
+  auction: 'Reverse Auction',
+  matching: 'Live Matching',
+  fulfill: 'AI Processing',
 };
 
 export const JOB_STATUS_LABELS: Record<string, string> = {
-  pending: '대기',
-  deposited: '입금됨',
-  processing: '처리 중',
-  completed: '완료',
-  failed: '실패',
-  disputed: '분쟁',
-  refunded: '환불',
+  pending: 'Pending',
+  deposited: 'Deposited',
+  processing: 'Processing',
+  completed: 'Completed',
+  failed: 'Failed',
+  disputed: 'Disputed',
+  refunded: 'Refunded',
 };
 
 export const JOB_STATUS_COLORS: Record<string, string> = {

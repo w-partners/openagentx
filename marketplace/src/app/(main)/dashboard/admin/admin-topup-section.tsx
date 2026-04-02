@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { useDict } from '@/i18n/client';
 
 interface TopupRequestWithUser {
   id: string;
@@ -17,9 +18,9 @@ interface TopupRequestWithUser {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: '대기 중',
-  approved: '승인됨',
-  rejected: '거부됨',
+  pending: 'Pending',
+  approved: 'Approved',
+  rejected: 'Rejected',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -29,6 +30,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function AdminTopupSection() {
+  const dict = useDict();
   const [pending, setPending] = useState<TopupRequestWithUser[]>([]);
   const [history, setHistory] = useState<TopupRequestWithUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +58,7 @@ export default function AdminTopupSection() {
   }, [fetchData]);
 
   const handleApprove = async (requestId: string) => {
-    if (!confirm('이 충전 요청을 승인하시겠습니까?')) return;
+    if (!confirm('Approve?')) return;
     setProcessing(requestId);
     try {
       const res = await fetch('/api/topup', {
@@ -68,10 +70,10 @@ export default function AdminTopupSection() {
         fetchData();
       } else {
         const data = await res.json();
-        alert(data.error ?? '처리 중 오류 발생');
+        alert(data.error ?? 'Error occurred');
       }
     } catch {
-      alert('네트워크 오류');
+      alert('Network error');
     } finally {
       setProcessing(null);
     }
@@ -91,10 +93,10 @@ export default function AdminTopupSection() {
         fetchData();
       } else {
         const data = await res.json();
-        alert(data.error ?? '처리 중 오류 발생');
+        alert(data.error ?? 'Error occurred');
       }
     } catch {
-      alert('네트워크 오류');
+      alert('Network error');
     } finally {
       setProcessing(null);
     }
@@ -104,10 +106,10 @@ export default function AdminTopupSection() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>충전 요청 관리</CardTitle>
+          <CardTitle>{dict.adminTopup.title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">불러오는 중...</p>
+          <p className="text-sm text-muted-foreground">{dict.common.loading}</p>
         </CardContent>
       </Card>
     );
@@ -118,15 +120,15 @@ export default function AdminTopupSection() {
       {/* Pending top-up requests */}
       <Card>
         <CardHeader>
-          <CardTitle>충전 요청 관리</CardTitle>
+          <CardTitle>Top-up Request Management</CardTitle>
           <CardDescription>
-            사용자 충전 요청을 확인하고 승인/거부하세요 (대기 중: {pending.length}건)
+            Review and approve/reject user top-up requests (Pending: {pending.length})
           </CardDescription>
         </CardHeader>
         <CardContent>
           {pending.length === 0 ? (
             <p className="text-muted-foreground text-center py-4">
-              대기 중인 충전 요청이 없습니다
+              {dict.adminTopup.noPending}
             </p>
           ) : (
             <div className="space-y-3">
@@ -148,7 +150,7 @@ export default function AdminTopupSection() {
                       <span className="font-semibold text-foreground">
                         $ {Number(req.amount).toLocaleString()}
                       </span>
-                      <span>{new Date(req.created_at).toLocaleDateString('ko-KR')}</span>
+                      <span>{new Date(req.created_at).toLocaleDateString('en-US')}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -156,7 +158,7 @@ export default function AdminTopupSection() {
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
-                          placeholder="거부 사유 (선택)"
+                          placeholder={dict.adminTopup.rejectReason}
                           value={rejectReason}
                           onChange={(e) => setRejectReason(e.target.value)}
                           className="flex h-8 w-40 rounded-md border border-input bg-background px-2 py-1 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -166,13 +168,13 @@ export default function AdminTopupSection() {
                           disabled={processing === req.id}
                           className="inline-flex items-center justify-center rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50"
                         >
-                          확인
+                          Confirm
                         </button>
                         <button
                           onClick={() => { setRejectTarget(null); setRejectReason(''); }}
                           className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
                         >
-                          취소
+                          Cancel
                         </button>
                       </div>
                     ) : (
@@ -182,14 +184,14 @@ export default function AdminTopupSection() {
                           disabled={processing === req.id}
                           className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                         >
-                          {processing === req.id ? '처리 중...' : '승인'}
+                          {processing === req.id ? dict.common.processing : dict.adminPage.approve}
                         </button>
                         <button
                           onClick={() => setRejectTarget(req.id)}
                           disabled={processing === req.id}
                           className="inline-flex items-center justify-center rounded-md bg-destructive/10 text-destructive px-3 py-1.5 text-xs font-medium hover:bg-destructive/20 transition-colors disabled:opacity-50"
                         >
-                          거부
+                          Reject
                         </button>
                       </>
                     )}
@@ -205,8 +207,8 @@ export default function AdminTopupSection() {
       {history.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>충전 처리 내역</CardTitle>
-            <CardDescription>최근 충전 요청 처리 기록</CardDescription>
+            <CardTitle>{dict.adminTopup.historyTitle}</CardTitle>
+            <CardDescription>{dict.adminTopup.historyDesc}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -222,9 +224,9 @@ export default function AdminTopupSection() {
                       <p className="text-sm font-medium">{req.nickname}</p>
                       <p className="text-xs text-muted-foreground">
                         $ {Number(req.amount).toLocaleString()} |{' '}
-                        {new Date(req.created_at).toLocaleDateString('ko-KR')}
+                        {new Date(req.created_at).toLocaleDateString('en-US')}
                         {req.approved_at && (
-                          <> | 처리: {new Date(req.approved_at).toLocaleDateString('ko-KR')}</>
+                          <> | Processed: {new Date(req.approved_at).toLocaleDateString('en-US')}</>
                         )}
                       </p>
                     </div>

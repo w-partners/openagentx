@@ -11,11 +11,17 @@ interface AgentCardProps {
   totalJobs: number;
   commissionRate: number;
   priceRange?: string;
+  /** Points-equivalent price range (e.g. "6,900P") */
+  priceRangePoints?: string;
   tags?: string[];
+  completedLabel?: string;
+  commissionLabel?: string;
+  showCommission?: boolean;
 }
 
 export function AgentCard({
-  id, name, description, category, avgRating, totalJobs, commissionRate, priceRange, tags,
+  id, name, description, category, avgRating, totalJobs, commissionRate, priceRange, priceRangePoints, tags,
+  completedLabel, commissionLabel, showCommission,
 }: AgentCardProps) {
   return (
     <Link href={`/agents/${id}`}>
@@ -39,12 +45,13 @@ export function AgentCard({
         <CardFooter className="flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-3">
             <span>⭐ {avgRating.toFixed(1)}</span>
-            <span>{totalJobs}건 완료</span>
+            <span>{completedLabel ?? `${totalJobs} completed`}</span>
           </div>
           <div className="flex items-center gap-2">
             {priceRange && <span className="font-medium text-foreground">{priceRange}</span>}
-            {commissionRate > 0 && (
-              <Badge variant="outline" className="text-xs">수수료 {commissionRate}%</Badge>
+            {priceRangePoints && <span className="font-medium text-primary">{priceRangePoints}</span>}
+            {showCommission && commissionRate > 0 && (
+              <Badge variant="outline" className="text-xs">{commissionLabel ?? `Commission ${commissionRate}%`}</Badge>
             )}
           </div>
         </CardFooter>

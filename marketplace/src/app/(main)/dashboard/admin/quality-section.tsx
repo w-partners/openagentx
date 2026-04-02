@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useDict } from '@/i18n/client';
 
 interface FeedbackStats {
   avgRating: number;
@@ -19,6 +20,7 @@ interface ReusageStats {
 }
 
 export default function QualitySection() {
+  const dict = useDict();
   const [stats, setStats] = useState<FeedbackStats | null>(null);
   const [reusage, setReusage] = useState<ReusageStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +36,7 @@ export default function QualitySection() {
         setReusage(data.reusage);
       }
     } catch {
-      // 통계 로드 실패 무시
+      // ignore stats load failure
     } finally {
       setLoading(false);
     }
@@ -56,13 +58,13 @@ export default function QualitySection() {
       });
 
       if (res.ok) {
-        setImproveResult('자동 개선이 완료되었습니다.');
+        setImproveResult(dict.qualitySection.autoImproveSuccess);
         fetchStats();
       } else {
-        setImproveResult('자동 개선에 실패했습니다.');
+        setImproveResult(dict.qualitySection.autoImproveFailed);
       }
     } catch {
-      setImproveResult('오류가 발생했습니다.');
+      setImproveResult(dict.qualitySection.autoImproveError);
     } finally {
       setImproving(false);
     }
@@ -75,19 +77,19 @@ export default function QualitySection() {
   }
 
   function getRatingBadge(rating: number) {
-    if (rating >= 4) return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">우수</Badge>;
-    if (rating >= 3) return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">보통</Badge>;
-    return <Badge variant="destructive">개선 필요</Badge>;
+    if (rating >= 4) return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">{dict.qualitySection.excellent}</Badge>;
+    if (rating >= 3) return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">{dict.qualitySection.average}</Badge>;
+    return <Badge variant="destructive">{dict.qualitySection.needsImprovement}</Badge>;
   }
 
   if (loading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>응답 품질 관리</CardTitle>
+          <CardTitle>{dict.qualitySection.title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground text-center py-4">로딩 중...</p>
+          <p className="text-muted-foreground text-center py-4">{dict.common.loading}</p>
         </CardContent>
       </Card>
     );
@@ -95,46 +97,46 @@ export default function QualitySection() {
 
   return (
     <div className="space-y-4">
-      {/* 품질 개요 */}
+      {/* Quality Overview */}
       <Card>
         <CardHeader>
-          <CardTitle>응답 품질 관리</CardTitle>
+          <CardTitle>Response Quality Management</CardTitle>
           <CardDescription>
-            AI 응답 피드백 분석 및 프롬프트 자동 개선 시스템
+            {dict.qualitySection.description}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="rounded-lg border p-4 text-center">
-              <p className="text-xs text-muted-foreground">평균 평점</p>
+              <p className="text-xs text-muted-foreground">{dict.qualitySection.avgRating}</p>
               <p className={`text-2xl font-bold ${getRatingColor(stats?.avgRating ?? 0)}`}>
                 {stats?.avgRating?.toFixed(1) ?? '-'} / 5
               </p>
             </div>
             <div className="rounded-lg border p-4 text-center">
-              <p className="text-xs text-muted-foreground">총 피드백</p>
+              <p className="text-xs text-muted-foreground">{dict.qualitySection.totalFeedback}</p>
               <p className="text-2xl font-bold">
-                {stats?.totalFeedback?.toLocaleString() ?? 0}건
+                {stats?.totalFeedback?.toLocaleString() ?? 0}
               </p>
             </div>
             <div className="rounded-lg border p-4 text-center">
-              <p className="text-xs text-muted-foreground">재사용률</p>
+              <p className="text-xs text-muted-foreground">{dict.qualitySection.reusageRate}</p>
               <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {reusage?.reusageRate ?? 0}%
               </p>
             </div>
             <div className="rounded-lg border p-4 text-center">
-              <p className="text-xs text-muted-foreground">카테고리</p>
+              <p className="text-xs text-muted-foreground">{dict.qualitySection.categoriesCount}</p>
               <p className="text-2xl font-bold">
-                {stats?.byCategory?.length ?? 0}개
+                {stats?.byCategory?.length ?? 0}
               </p>
             </div>
           </div>
 
-          {/* 평점 분포 */}
+          {/* Rating Distribution */}
           {stats && stats.ratingDistribution.length > 0 && (
             <div className="mb-6">
-              <h4 className="text-sm font-medium mb-3">평점 분포</h4>
+              <h4 className="text-sm font-medium mb-3">{dict.qualitySection.ratingDistribution}</h4>
               <div className="space-y-2">
                 {[5, 4, 3, 2, 1].map((rating) => {
                   const item = stats.ratingDistribution.find((d) => d.rating === rating);
@@ -143,7 +145,7 @@ export default function QualitySection() {
                   const width = Math.max((count / maxCount) * 100, 2);
                   return (
                     <div key={rating} className="flex items-center gap-2">
-                      <span className="text-xs w-8 text-right">{rating}점</span>
+                      <span className="text-xs w-8 text-right">{rating}pt</span>
                       <div className="flex-1 bg-muted rounded-full h-4 overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all ${
@@ -156,7 +158,7 @@ export default function QualitySection() {
                           style={{ width: `${width}%` }}
                         />
                       </div>
-                      <span className="text-xs w-10 text-muted-foreground">{count}건</span>
+                      <span className="text-xs w-10 text-muted-foreground">{count}</span>
                     </div>
                   );
                 })}
@@ -166,13 +168,13 @@ export default function QualitySection() {
         </CardContent>
       </Card>
 
-      {/* 카테고리별 품질 */}
+      {/* Quality by Category */}
       {stats && stats.byCategory.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>카테고리별 품질</CardTitle>
+            <CardTitle>{dict.qualitySection.categoryQuality}</CardTitle>
             <CardDescription>
-              낮은 평점 카테고리는 자동 개선 대상입니다
+              {dict.qualitySection.categoryQualityDesc}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -188,9 +190,9 @@ export default function QualitySection() {
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span className={getRatingColor(cat.avgRating)}>
-                      평균 {cat.avgRating.toFixed(1)}
+                      Avg {cat.avgRating.toFixed(1)}
                     </span>
-                    <span>{cat.count}건</span>
+                    <span>{cat.count}</span>
                   </div>
                 </div>
               ))}
@@ -199,11 +201,11 @@ export default function QualitySection() {
         </Card>
       )}
 
-      {/* 프로바이더별 품질 */}
+      {/* Quality by Provider */}
       {stats && stats.byProvider.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>AI 프로바이더별 품질</CardTitle>
+            <CardTitle>{dict.qualitySection.providerQuality}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -217,9 +219,9 @@ export default function QualitySection() {
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span className={getRatingColor(prov.avgRating)}>
-                      평균 {prov.avgRating.toFixed(1)}
+                      Avg {prov.avgRating.toFixed(1)}
                     </span>
-                    <span>{prov.count}건</span>
+                    <span>{prov.count}</span>
                   </div>
                 </div>
               ))}
@@ -228,12 +230,12 @@ export default function QualitySection() {
         </Card>
       )}
 
-      {/* 자동 개선 */}
+      {/* Auto Improvement */}
       <Card>
         <CardHeader>
-          <CardTitle>프롬프트 자동 개선</CardTitle>
+          <CardTitle>{dict.qualitySection.autoImprove}</CardTitle>
           <CardDescription>
-            낮은 평점 카테고리의 시스템 프롬프트를 AI가 자동으로 분석하고 개선합니다
+            {dict.qualitySection.autoImproveDesc}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -243,15 +245,15 @@ export default function QualitySection() {
               disabled={improving}
               className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {improving ? '분석 중...' : '자동 개선 실행'}
+              {improving ? dict.qualitySection.analyzing : dict.qualitySection.runAutoImprove}
             </button>
             {improveResult && (
               <span className="text-sm text-muted-foreground">{improveResult}</span>
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-3">
-            피드백 10건 이상, 평균 평점 3.0 이하인 카테고리만 개선 대상입니다.
-            매주 자동으로 실행됩니다.
+            Only categories with 10+ feedbacks and avg rating below 3.0 are eligible for improvement.
+            Runs automatically every week.
           </p>
         </CardContent>
       </Card>

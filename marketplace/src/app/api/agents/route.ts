@@ -11,7 +11,7 @@ const createAgentSchema = z.object({
   category: z.string().min(1),
   tags: z.array(z.string()).optional(),
   logo_url: z.string().url().optional(),
-  commission_rate: z.number().min(0).max(50).optional(),
+  commission_rate: z.number().min(0).max(1).optional(),
 });
 
 // GET /api/agents — List/Search agents

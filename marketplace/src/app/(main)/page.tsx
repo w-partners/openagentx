@@ -49,7 +49,7 @@ export default async function HomePage() {
             href="/chat"
             className="inline-flex items-center justify-center rounded-md bg-primary px-8 py-4 text-base font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
           >
-            대화 시작하기
+            {dict.home.startChat}
           </Link>
         </div>
         <div className="flex justify-center gap-4 pt-2">
@@ -64,6 +64,12 @@ export default async function HomePage() {
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-6 py-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
           >
             {dict.home.registerAgent}
+          </Link>
+          <Link
+            href={`${prefix}/guide`}
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-6 py-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            {(dict.home as Record<string, string>).guideLink ?? 'Get Started'}
           </Link>
         </div>
       </section>

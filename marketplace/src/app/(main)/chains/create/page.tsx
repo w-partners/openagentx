@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CATEGORY_LABELS } from '@/lib/utils/constants';
+import { useDict } from '@/i18n/client';
 
 const STEP_TYPES = [
-  { value: 'fixed', label: '고정가격', desc: '특정 에이전트에 고정 금액으로 요청' },
-  { value: 'auction', label: '역경매', desc: '에이전트들이 경쟁 입찰' },
-  { value: 'matching', label: '실시간 매칭', desc: '가장 먼저 수락하는 에이전트와 연결' },
-  { value: 'fulfill', label: 'AI 처리', desc: 'AI가 직접 처리 (Dynamic Factory)' },
+  { value: 'fixed', label: 'Fixed Price', desc: 'Request a specific agent at a fixed price' },
+  { value: 'auction', label: 'Reverse Auction', desc: 'Agents compete with bids' },
+  { value: 'matching', label: 'Live Matching', desc: 'Connect with the first agent to accept' },
+  { value: 'fulfill', label: 'AI Processing', desc: 'AI processes directly (Dynamic Factory)' },
 ];
 
 interface StepForm {
@@ -38,6 +38,7 @@ const defaultStep = (): StepForm => ({
 });
 
 export default function CreateChainPage() {
+  const dict = useDict();
   const router = useRouter();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -71,7 +72,7 @@ export default function CreateChainPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (steps.some((s) => !s.name || !s.description)) {
-      setError('모든 단계의 이름과 설명을 입력하세요');
+      setError(dict.chainCreate.allStepsRequired);
       return;
     }
 
@@ -94,10 +95,10 @@ export default function CreateChainPage() {
       if (json.success && json.data?.id) {
         router.push(`/chains/${json.data.id}`);
       } else {
-        setError(json.error ?? '체인 생성에 실패했습니다');
+        setError(json.error ?? dict.chainCreate.createFailed);
       }
     } catch {
-      setError('네트워크 오류가 발생했습니다');
+      setError(dict.common.networkError);
     } finally {
       setSubmitting(false);
     }
@@ -106,9 +107,9 @@ export default function CreateChainPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold">체인 만들기</h1>
+        <h1 className="text-3xl font-bold">{dict.chainCreate.title}</h1>
         <p className="text-muted-foreground">
-          여러 단계로 구성된 자동화 워크플로우를 정의하세요
+          {dict.chainCreate.description}
         </p>
       </div>
 
@@ -116,16 +117,16 @@ export default function CreateChainPage() {
         {/* Basic info */}
         <Card>
           <CardHeader>
-            <CardTitle>기본 정보</CardTitle>
+            <CardTitle>{dict.chainCreate.basicInfo}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">체인 이름</label>
+              <label className="block text-sm font-medium mb-1">{dict.chainCreate.chainName}</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="예: 콘텐츠 제작 파이프라인"
+                placeholder={dict.chainCreate.chainNamePlaceholder}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                 required
                 minLength={2}
@@ -133,23 +134,23 @@ export default function CreateChainPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">설명 (선택)</label>
+              <label className="block text-sm font-medium mb-1">{dict.chainCreate.descriptionLabel}</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="이 체인의 용도를 설명하세요..."
+                placeholder={dict.chainCreate.descriptionPlaceholder}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm min-h-[80px]"
                 maxLength={5000}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">카테고리</label>
+              <label className="block text-sm font-medium mb-1">{dict.chainCreate.categoryLabel}</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               >
-                {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                {Object.entries(dict.categories).map(([key, label]) => (
                   <option key={key} value={key}>{label}</option>
                 ))}
               </select>
@@ -160,9 +161,9 @@ export default function CreateChainPage() {
         {/* Steps */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">단계 ({steps.length}개)</h2>
+            <h2 className="text-xl font-semibold">{dict.chainCreate.steps.replace('{count}', String(steps.length))}</h2>
             <Button type="button" variant="outline" size="sm" onClick={addStep} disabled={steps.length >= 20}>
-              단계 추가
+              {dict.chainCreate.addStep}
             </Button>
           </div>
 
@@ -172,7 +173,7 @@ export default function CreateChainPage() {
               <span key={i} className="inline-flex items-center gap-1 shrink-0">
                 {i > 0 && <span className="text-muted-foreground">&rarr;</span>}
                 <Badge variant="outline" className="text-xs">
-                  {step.name || `단계 ${i + 1}`}
+                  {step.name || dict.chainCreate.stepN.replace('{n}', String(i + 1))}
                 </Badge>
               </span>
             ))}
@@ -182,7 +183,7 @@ export default function CreateChainPage() {
             <Card key={i}>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">단계 {i + 1}</CardTitle>
+                  <CardTitle className="text-base">{dict.chainCreate.stepN.replace('{n}', String(i + 1))}</CardTitle>
                   <div className="flex items-center gap-1">
                     <Button type="button" variant="ghost" size="sm"
                       onClick={() => moveStep(i, -1)} disabled={i === 0}>
@@ -195,7 +196,7 @@ export default function CreateChainPage() {
                     <Button type="button" variant="ghost" size="sm"
                       onClick={() => removeStep(i)} disabled={steps.length <= 2}
                       className="text-red-500 hover:text-red-700">
-                      삭제
+                      {dict.chainCreate.deleteStep}
                     </Button>
                   </div>
                 </div>
@@ -203,18 +204,18 @@ export default function CreateChainPage() {
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium mb-1">단계 이름</label>
+                    <label className="block text-sm font-medium mb-1">{dict.chainCreate.stepName}</label>
                     <input
                       type="text"
                       value={step.name}
                       onChange={(e) => updateStep(i, { name: e.target.value })}
-                      placeholder="예: 기획 작성"
+                      placeholder={dict.chainCreate.stepNamePlaceholder}
                       className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">실행 방식</label>
+                    <label className="block text-sm font-medium mb-1">{dict.chainCreate.executionMethod}</label>
                     <select
                       value={step.type}
                       onChange={(e) => updateStep(i, { type: e.target.value })}
@@ -231,11 +232,11 @@ export default function CreateChainPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">설명</label>
+                  <label className="block text-sm font-medium mb-1">{dict.chainCreate.stepDescription}</label>
                   <textarea
                     value={step.description}
                     onChange={(e) => updateStep(i, { description: e.target.value })}
-                    placeholder="이 단계에서 수행할 작업을 설명하세요..."
+                    placeholder={dict.chainCreate.stepDescPlaceholder}
                     className="w-full rounded-md border bg-background px-3 py-2 text-sm min-h-[60px]"
                     required
                   />
@@ -243,26 +244,26 @@ export default function CreateChainPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium mb-1">카테고리</label>
+                    <label className="block text-sm font-medium mb-1">{dict.chainCreate.categoryLabel}</label>
                     <select
                       value={step.category}
                       onChange={(e) => updateStep(i, { category: e.target.value })}
                       className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                     >
-                      {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                      {Object.entries(dict.categories).map(([key, label]) => (
                         <option key={key} value={key}>{label}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">최대 금액 (USDC)</label>
+                    <label className="block text-sm font-medium mb-1">{dict.chainCreate.maxAmount}</label>
                     <input
                       type="number"
                       value={step.config.max_price ?? ''}
                       onChange={(e) => updateStep(i, {
                         config: { ...step.config, max_price: e.target.value ? Number(e.target.value) : undefined },
                       })}
-                      placeholder="선택 사항"
+                      placeholder={dict.chainCreate.optional}
                       className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                       min={0}
                       step={0.01}
@@ -279,7 +280,7 @@ export default function CreateChainPage() {
                     className="rounded border"
                   />
                   <label htmlFor={`auto-${i}`} className="text-sm">
-                    이전 단계 완료 시 자동 실행
+                    {dict.chainCreate.autoTrigger}
                   </label>
                 </div>
               </CardContent>
@@ -291,10 +292,10 @@ export default function CreateChainPage() {
 
         <div className="flex gap-3">
           <Button type="submit" disabled={submitting} className="flex-1">
-            {submitting ? '생성 중...' : '체인 생성'}
+            {submitting ? dict.chainCreate.creating : dict.chainCreate.createBtn}
           </Button>
           <Button type="button" variant="outline" onClick={() => router.push('/chains')}>
-            취소
+            {dict.common.cancel}
           </Button>
         </div>
       </form>

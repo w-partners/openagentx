@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useDict } from '@/i18n/client';
 
 interface RatingButtonsProps {
   agentId?: string;
@@ -23,6 +24,7 @@ export default function RatingButtons({
   mode = 'stars',
   onRated,
 }: RatingButtonsProps) {
+  const dict = useDict();
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -54,7 +56,7 @@ export default function RatingButtons({
         onRated?.(rating);
       }
     } catch {
-      // 실패 시 다시 시도 가능하도록
+      // allow retry on failure
       setSelectedRating(null);
     } finally {
       setSubmitting(false);
@@ -65,7 +67,7 @@ export default function RatingButtons({
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <span className="text-green-600 dark:text-green-400">
-          피드백이 제출되었습니다. 감사합니다!
+          {dict.feedbackWidget.submitted}
         </span>
       </div>
     );
@@ -74,7 +76,7 @@ export default function RatingButtons({
   if (mode === 'thumbs') {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground">이 응답이 도움이 되었나요?</span>
+        <span className="text-xs text-muted-foreground">{dict.feedbackWidget.helpfulQuestion}</span>
         <button
           onClick={() => handleRate(5)}
           disabled={submitting}
@@ -83,9 +85,9 @@ export default function RatingButtons({
               ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
               : 'hover:bg-green-50 dark:hover:bg-green-950'
             } disabled:opacity-50`}
-          title="도움이 됨"
+          title="Helpful"
         >
-          좋아요
+          Like
         </button>
         <button
           onClick={() => handleRate(1)}
@@ -95,18 +97,18 @@ export default function RatingButtons({
               ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
               : 'hover:bg-red-50 dark:hover:bg-red-950'
             } disabled:opacity-50`}
-          title="도움이 안 됨"
+          title="Not helpful"
         >
-          별로예요
+          Dislike
         </button>
       </div>
     );
   }
 
-  // 별점 모드
+  // star rating mode
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-muted-foreground">평점:</span>
+      <span className="text-xs text-muted-foreground">{dict.feedbackWidget.ratingLabel}</span>
       <div className="flex gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => {
           const isActive = (hoveredRating ?? selectedRating ?? 0) >= star;
@@ -122,14 +124,14 @@ export default function RatingButtons({
                   ? 'text-yellow-500'
                   : 'text-gray-300 dark:text-gray-600'
                 } hover:scale-110`}
-              title={`${star}점`}
+              title={`${star} stars`}
             >
               ★
             </button>
           );
         })}
       </div>
-      {submitting && <span className="text-xs text-muted-foreground">제출 중...</span>}
+      {submitting && <span className="text-xs text-muted-foreground">{dict.feedbackWidget.submitting}</span>}
     </div>
   );
 }

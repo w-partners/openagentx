@@ -5,14 +5,7 @@ import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CATEGORY_LABELS } from '@/lib/utils/constants';
-
-const URGENCY_LABELS: Record<string, string> = {
-  low: '낮음',
-  normal: '보통',
-  urgent: '긴급',
-  critical: '매우 긴급',
-};
+import { useDict } from '@/i18n/client';
 
 const URGENCY_COLORS: Record<string, string> = {
   low: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
@@ -36,17 +29,18 @@ interface MatchingItem {
 
 function timeRemaining(expiresAt: string): string {
   const diff = new Date(expiresAt).getTime() - Date.now();
-  if (diff <= 0) return '만료됨';
+  if (diff <= 0) return 'Expired';
   const hours = Math.floor(diff / 3600000);
   const minutes = Math.floor((diff % 3600000) / 60000);
   const seconds = Math.floor((diff % 60000) / 1000);
-  if (hours > 0) return `${hours}시간 ${minutes}분 남음`;
-  if (minutes > 0) return `${minutes}분 ${seconds}초 남음`;
-  return `${seconds}초 남음`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
 }
 
 // --- Create Request Form ---
 function CreateRequestForm({ onCreated }: { onCreated: () => void }) {
+  const dict = useDict();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('coding');
@@ -69,15 +63,15 @@ function CreateRequestForm({ onCreated }: { onCreated: () => void }) {
       });
       const data = await res.json();
       if (data.success) {
-        setSuccess('매칭 요청이 등록되었습니다!');
+        setSuccess(dict.matchingPage.requestSuccess);
         setTitle('');
         setDescription('');
         onCreated();
       } else {
-        setError(data.error || '요청 등록에 실패했습니다');
+        setError(data.error || dict.matchingPage.requestFailed);
       }
     } catch {
-      setError('네트워크 오류가 발생했습니다');
+      setError(dict.common.networkError);
     } finally {
       setSubmitting(false);
     }
@@ -86,20 +80,20 @@ function CreateRequestForm({ onCreated }: { onCreated: () => void }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl">도움이 필요하세요?</CardTitle>
+        <CardTitle className="text-xl">{dict.matchingPage.needHelp}</CardTitle>
         <CardDescription>
-          요청을 등록하면 가까운 AI 에이전트가 즉시 수락합니다
+          {dict.matchingPage.needHelpDesc}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">제목</label>
+            <label className="block text-sm font-medium mb-1">{dict.matchingPage.titleLabel}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="어떤 도움이 필요한가요?"
+              placeholder={dict.matchingPage.titlePlaceholder}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               required
               minLength={5}
@@ -108,11 +102,11 @@ function CreateRequestForm({ onCreated }: { onCreated: () => void }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">설명</label>
+            <label className="block text-sm font-medium mb-1">{dict.matchingPage.descriptionLabel}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="구체적으로 설명해 주세요..."
+              placeholder={dict.matchingPage.descriptionPlaceholder}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm min-h-[100px]"
               required
               minLength={10}
@@ -122,26 +116,26 @@ function CreateRequestForm({ onCreated }: { onCreated: () => void }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">카테고리</label>
+              <label className="block text-sm font-medium mb-1">{dict.matchingPage.categoryLabel}</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               >
-                {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                {Object.entries(dict.categories).map(([key, label]) => (
                   <option key={key} value={key}>{label}</option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">긴급도</label>
+              <label className="block text-sm font-medium mb-1">{dict.matchingPage.urgencyLabel}</label>
               <select
                 value={urgency}
                 onChange={(e) => setUrgency(e.target.value)}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               >
-                {Object.entries(URGENCY_LABELS).map(([key, label]) => (
+                {Object.entries({low: dict.matchingPage.urgencyLow, normal: dict.matchingPage.urgencyNormal, urgent: dict.matchingPage.urgencyUrgent, critical: dict.matchingPage.urgencyCritical}).map(([key, label]) => (
                   <option key={key} value={key}>{label}</option>
                 ))}
               </select>
@@ -152,7 +146,7 @@ function CreateRequestForm({ onCreated }: { onCreated: () => void }) {
           {success && <p className="text-sm text-green-600">{success}</p>}
 
           <Button type="submit" disabled={submitting} className="w-full">
-            {submitting ? '등록 중...' : '매칭 요청 등록'}
+            {submitting ? dict.matchingPage.submitting : dict.matchingPage.submitRequest}
           </Button>
         </form>
       </CardContent>
@@ -162,6 +156,7 @@ function CreateRequestForm({ onCreated }: { onCreated: () => void }) {
 
 // --- Main Page ---
 export default function MatchingPage() {
+  const dict = useDict();
   const [requests, setRequests] = useState<MatchingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -189,9 +184,9 @@ export default function MatchingPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold">실시간 매칭</h1>
+        <h1 className="text-3xl font-bold">{dict.matchingPage.title}</h1>
         <p className="text-muted-foreground">
-          즉시 서비스가 필요하면 요청하세요. 첫 번째로 수락하는 에이전트가 연결됩니다.
+          {dict.matchingPage.description}
         </p>
       </div>
 
@@ -204,9 +199,9 @@ export default function MatchingPage() {
         {/* Right: Waiting Requests */}
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">요청 대기 중</h2>
+            <h2 className="text-xl font-semibold">{dict.matchingPage.waitingRequests}</h2>
             <Button variant="outline" size="sm" onClick={loadRequests}>
-              새로고침
+              Refresh
             </Button>
           </div>
 
@@ -218,9 +213,9 @@ export default function MatchingPage() {
                 !selectedCategory ? 'bg-primary text-primary-foreground' : 'hover:bg-accent'
               }`}
             >
-              전체
+              All
             </button>
-            {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+            {Object.entries(dict.categories).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setSelectedCategory(key)}
@@ -235,10 +230,10 @@ export default function MatchingPage() {
 
           {/* Request list */}
           {loading ? (
-            <div className="text-center py-12 text-muted-foreground">로딩 중...</div>
+            <div className="text-center py-12 text-muted-foreground">{dict.common.loading}</div>
           ) : requests.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">대기 중인 요청이 없습니다</p>
+              <p className="text-muted-foreground">{dict.matchingPage.noWaitingRequests}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -248,10 +243,10 @@ export default function MatchingPage() {
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <Badge className={URGENCY_COLORS[req.urgency] ?? ''}>
-                          {URGENCY_LABELS[req.urgency] ?? req.urgency}
+                          {({low: dict.matchingPage.urgencyLow, normal: dict.matchingPage.urgencyNormal, urgent: dict.matchingPage.urgencyUrgent, critical: dict.matchingPage.urgencyCritical} as Record<string, string>)[req.urgency] ?? req.urgency}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {CATEGORY_LABELS[req.category] ?? req.category}
+                          {dict.categories[req.category as keyof typeof dict.categories] ?? req.category}
                         </span>
                       </div>
                       <CardTitle className="text-base mt-2">{req.title}</CardTitle>
@@ -262,7 +257,7 @@ export default function MatchingPage() {
                     <CardContent className="pb-2">
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-semibold text-primary">
-                          연결 수수료: {Number(req.connection_fee).toFixed(2)} USDC
+                          {dict.matchingPage.connectionFee.replace('{fee}', Number(req.connection_fee).toFixed(2))}
                         </span>
                       </div>
                     </CardContent>
@@ -271,7 +266,7 @@ export default function MatchingPage() {
                         {timeRemaining(req.expires_at)}
                       </span>
                       <Button size="sm" variant="default">
-                        수락하기
+                        Accept
                       </Button>
                     </CardFooter>
                   </Card>

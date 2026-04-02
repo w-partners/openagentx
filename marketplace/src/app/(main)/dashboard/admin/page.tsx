@@ -1,284 +1,275 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CATEGORY_LABELS } from '@/lib/utils/constants';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import AdminTopupSection from './admin-topup-section';
 import AdminShareSection from './admin-share-section';
 import RewardsConfigSection from './rewards-config';
 import QualitySection from './quality-section';
+import AlgorithmSection from './algorithm-section';
+import PagesSection from './pages-section';
+import LanguagesSection from './languages-section';
+import CurrencySection from './currency-section';
+import { useDict } from '@/i18n/client';
 
-// Demo admin stats (replace with API fetch)
-const platformStats = {
-  totalUsers: 1247,
-  totalAgents: 86,
-  activeAgents: 72,
-  pendingAgents: 8,
-  totalJobs: 3456,
-  totalRevenue: 89450,
-  monthlyRevenue: 12300,
-  totalBounties: 134,
-  openBounties: 23,
-  activeDisputes: 3,
-  totalSubscriptions: 312,
-};
+/* ─── Types ─── */
+interface AdminUser {
+  id: string;
+  email: string | null;
+  nickname: string;
+  role: string;
+  created_at: string;
+  is_active: boolean;
+}
 
-const pendingAgents = [
-  {
-    id: 'pa1',
-    name: '크립토 알파 스캐너',
-    owner: '개발자A',
-    category: 'market_intelligence',
-    submitted_at: '2026-03-21',
-  },
-  {
-    id: 'pa2',
-    name: '토큰 밸류에이터',
-    owner: '개발자B',
-    category: 'token_analysis',
-    submitted_at: '2026-03-20',
-  },
-  {
-    id: 'pa3',
-    name: 'MEV 디텍터',
-    owner: '개발자C',
-    category: 'on_chain_forensics',
-    submitted_at: '2026-03-19',
-  },
-];
 
-const recentDisputes = [
-  {
-    id: 'd1',
-    jobId: 'j1',
-    agentName: '마켓 센티넬',
-    buyer: '사용자X',
-    reason: '결과물 품질 불만족',
-    amount: 50,
-    created_at: '2026-03-22',
-  },
-  {
-    id: 'd2',
-    jobId: 'j2',
-    agentName: '트레이드 봇 프로',
-    buyer: '사용자Y',
-    reason: '응답 시간 초과',
-    amount: 100,
-    created_at: '2026-03-21',
-  },
-  {
-    id: 'd3',
-    jobId: 'j3',
-    agentName: 'DeFi 옵티마이저',
-    buyer: '사용자Z',
-    reason: '기능 미구현',
-    amount: 80,
-    created_at: '2026-03-20',
-  },
-];
+/* ─── Overview Tab ─── */
+function OverviewTab({ dict }: { dict: ReturnType<typeof useDict> }) {
+  const ap = dict.adminPanel as Record<string, Record<string, string>>;
+  const ov = ap.overview;
+  const stats = [
+    { label: ov.totalUsers, value: '-' },
+    { label: ov.totalAgents, value: '-' },
+    { label: ov.totalTransactions, value: '-' },
+    { label: ov.totalRevenue, value: '-' },
+  ];
 
-export default function AdminDashboardPage() {
+  const [counts, setCounts] = useState<{ users: number; agents: number }>({ users: 0, agents: 0 });
+
+  useEffect(() => {
+    fetch('/api/admin/users')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.users) setCounts({ users: d.users.length, agents: 0 });
+      })
+      .catch(() => {});
+  }, []);
+
   return (
-    <div className="space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">관리자 대시보드</h1>
-        <p className="text-muted-foreground">
-          플랫폼 전체 현황을 모니터링하고 관리하세요
-        </p>
-      </div>
-
-      {/* Platform overview */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>전체 사용자</CardDescription>
-            <CardTitle>{platformStats.totalUsers.toLocaleString()}명</CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>활성 에이전트</CardDescription>
-            <CardTitle>{platformStats.activeAgents}개</CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>총 작업</CardDescription>
-            <CardTitle>{platformStats.totalJobs.toLocaleString()}건</CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>총 수익</CardDescription>
-            <CardTitle>$ {platformStats.totalRevenue.toLocaleString()}</CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>이번 달 수익</CardDescription>
-            <CardTitle>$ {platformStats.monthlyRevenue.toLocaleString()}</CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
-
-      {/* Secondary stats */}
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">{ov.title}</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>대기 중 에이전트</CardDescription>
-            <CardTitle className="text-orange-600 dark:text-orange-400">
-              {platformStats.pendingAgents}개
-            </CardTitle>
-          </CardHeader>
-        </Card>
+        {stats.map((s, i) => (
+          <Card key={i} size="sm">
+            <CardHeader>
+              <CardDescription>{s.label}</CardDescription>
+              <CardTitle>
+                {i === 0 ? counts.users : s.value}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>진행 중 분쟁</CardDescription>
-            <CardTitle className="text-red-600 dark:text-red-400">
-              {platformStats.activeDisputes}건
-            </CardTitle>
-          </CardHeader>
-        </Card>
+/* ─── Users Tab ─── */
+function UsersTab({ dict }: { dict: ReturnType<typeof useDict> }) {
+  const ap = dict.adminPanel as Record<string, Record<string, string>>;
+  const ut = ap.users;
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
 
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>오픈 바운티</CardDescription>
-            <CardTitle>{platformStats.openBounties}개</CardTitle>
-          </CardHeader>
-        </Card>
+  const fetchUsers = useCallback(() => {
+    setLoading(true);
+    fetch('/api/admin/users')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.users) setUsers(d.users);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
-        <Card size="sm">
-          <CardHeader>
-            <CardDescription>활성 구독</CardDescription>
-            <CardTitle>{platformStats.totalSubscriptions}건</CardTitle>
-          </CardHeader>
-        </Card>
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'updateRole', userId, role: newRole }),
+    });
+    if (res.ok) {
+      fetchUsers();
+    }
+  };
+
+  const handleToggleActive = async (userId: string) => {
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggleActive', userId }),
+    });
+    if (res.ok) {
+      fetchUsers();
+    }
+  };
+
+  if (loading) return <p className="text-muted-foreground py-8 text-center">{dict.common.loading}</p>;
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-2xl font-bold">{ut.title}</h2>
+        <p className="text-muted-foreground">{ut.description}</p>
       </div>
 
-      {/* Top-up requests management */}
+      {users.length === 0 ? (
+        <p className="text-muted-foreground text-center py-8">{ut.noUsers}</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <div className="min-w-[700px]">
+            {/* Table header */}
+            <div className="grid grid-cols-[1fr_1fr_100px_100px_120px_160px] gap-2 px-4 py-2 bg-muted rounded-t-md text-sm font-medium">
+              <span>{ut.email}</span>
+              <span>{ut.nickname}</span>
+              <span>{ut.role}</span>
+              <span>{ut.status}</span>
+              <span>{ut.createdAt}</span>
+              <span>{ut.actions}</span>
+            </div>
+            {/* Table rows */}
+            {users.map((user) => (
+              <div
+                key={user.id}
+                className="grid grid-cols-[1fr_1fr_100px_100px_120px_160px] gap-2 px-4 py-3 border-b items-center text-sm"
+              >
+                <span className="truncate">{user.email ?? '-'}</span>
+                <span className="truncate">{user.nickname}</span>
+                <span>
+                  <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                    {user.role}
+                  </Badge>
+                </span>
+                <span>
+                  <Badge variant={user.is_active ? 'default' : 'destructive'}>
+                    {user.is_active ? ut.active : ut.inactive}
+                  </Badge>
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(user.created_at).toLocaleDateString()}
+                </span>
+                <div className="flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7 px-2"
+                    onClick={() =>
+                      handleRoleChange(user.id, user.role === 'admin' ? 'user' : 'admin')
+                    }
+                  >
+                    {user.role === 'admin' ? ut.makeUser : ut.makeAdmin}
+                  </Button>
+                  <Button
+                    variant={user.is_active ? 'destructive' : 'default'}
+                    size="sm"
+                    className="text-xs h-7 px-2"
+                    onClick={() => handleToggleActive(user.id)}
+                  >
+                    {user.is_active ? ut.deactivate : ut.activate}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Agents Tab ─── */
+function AgentsTab({ dict }: { dict: ReturnType<typeof useDict> }) {
+  const ap = dict.adminPanel as Record<string, Record<string, string>>;
+  const at = ap.agents;
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-2xl font-bold">{at.title}</h2>
+        <p className="text-muted-foreground">{at.description}</p>
+      </div>
+      <p className="text-muted-foreground text-center py-8">{at.noAgents}</p>
+    </div>
+  );
+}
+
+/* PagesTab and LanguagesTab are now separate components: PagesSection, LanguagesSection */
+
+
+/* ─── Settings Tab (existing sections) ─── */
+function SettingsTab({ dict }: { dict: ReturnType<typeof useDict> }) {
+  const ap = dict.adminPanel as Record<string, Record<string, string>>;
+  const st = ap.settings;
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">{st.title}</h2>
+        <p className="text-muted-foreground">{st.description}</p>
+      </div>
       <AdminTopupSection />
-
-      {/* Share verification management */}
       <AdminShareSection />
-
-      {/* Reward configuration */}
       <RewardsConfigSection />
-
-      {/* Quality management */}
       <QualitySection />
+    </div>
+  );
+}
 
-      {/* Pending agents review */}
-      <Card>
-        <CardHeader>
-          <CardTitle>승인 대기 에이전트</CardTitle>
-          <CardDescription>검토가 필요한 에이전트 목록</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {pendingAgents.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
-              대기 중인 에이전트가 없습니다
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {pendingAgents.map((agent) => (
-                <div
-                  key={agent.id}
-                  className="flex items-center justify-between py-3 border-b last:border-0"
-                >
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">{agent.name}</p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>제출자: {agent.owner}</span>
-                      <span>{CATEGORY_LABELS[agent.category] ?? agent.category}</span>
-                      <span>{agent.submitted_at}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-                      승인
-                    </button>
-                    <button className="inline-flex items-center justify-center rounded-md bg-destructive/10 text-destructive px-3 py-1.5 text-xs font-medium hover:bg-destructive/20 transition-colors">
-                      거부
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+/* ─── Main Admin Page ─── */
+export default function AdminDashboardPage() {
+  const dict = useDict();
+  const ap = dict.adminPanel as Record<string, Record<string, string>>;
+  const tabs = ap.tabs;
+  const [activeTab, setActiveTab] = useState('overview');
 
-      {/* Active disputes */}
-      <Card>
-        <CardHeader>
-          <CardTitle>진행 중 분쟁</CardTitle>
-          <CardDescription>해결이 필요한 분쟁 목록</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {recentDisputes.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
-              진행 중인 분쟁이 없습니다
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {recentDisputes.map((dispute) => (
-                <div
-                  key={dispute.id}
-                  className="flex items-center justify-between py-3 border-b last:border-0"
-                >
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">
-                      {dispute.agentName}
-                      <span className="text-muted-foreground font-normal">
-                        {' '}vs {dispute.buyer}
-                      </span>
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>사유: {dispute.reason}</span>
-                      <span>금액: $ {dispute.amount}</span>
-                      <span>{dispute.created_at}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Badge variant="destructive">분쟁 중</Badge>
-                    <button className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors">
-                      상세보기
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Quick actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <a
-          href="/dashboard"
-          className="rounded-lg border bg-card p-6 text-center hover:shadow-lg transition-shadow"
-        >
-          <p className="font-semibold">판매자 대시보드</p>
-          <p className="text-sm text-muted-foreground mt-1">판매자 뷰로 전환</p>
-        </a>
-        <a
-          href="/agents"
-          className="rounded-lg border bg-card p-6 text-center hover:shadow-lg transition-shadow"
-        >
-          <p className="font-semibold">에이전트 관리</p>
-          <p className="text-sm text-muted-foreground mt-1">전체 에이전트 목록 관리</p>
-        </a>
-        <a
-          href="/bounties"
-          className="rounded-lg border bg-card p-6 text-center hover:shadow-lg transition-shadow"
-        >
-          <p className="font-semibold">바운티 관리</p>
-          <p className="text-sm text-muted-foreground mt-1">바운티 목록 확인 및 관리</p>
-        </a>
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold">{dict.adminPage.title}</h1>
+        <p className="text-muted-foreground">{dict.adminPage.description}</p>
       </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full flex-wrap">
+          <TabsTrigger value="overview">{tabs.overview}</TabsTrigger>
+          <TabsTrigger value="users">{tabs.users}</TabsTrigger>
+          <TabsTrigger value="agents">{tabs.agents}</TabsTrigger>
+          <TabsTrigger value="pages">{tabs.pages}</TabsTrigger>
+          <TabsTrigger value="languages">{tabs.languages}</TabsTrigger>
+          <TabsTrigger value="algorithm">{tabs.algorithm}</TabsTrigger>
+          <TabsTrigger value="currency">{tabs.currency ?? 'Currency'}</TabsTrigger>
+          <TabsTrigger value="settings">{tabs.settings}</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview">
+          <OverviewTab dict={dict} />
+        </TabsContent>
+        <TabsContent value="users">
+          <UsersTab dict={dict} />
+        </TabsContent>
+        <TabsContent value="agents">
+          <AgentsTab dict={dict} />
+        </TabsContent>
+        <TabsContent value="pages">
+          <PagesSection />
+        </TabsContent>
+        <TabsContent value="languages">
+          <LanguagesSection />
+        </TabsContent>
+        <TabsContent value="algorithm">
+          <AlgorithmSection />
+        </TabsContent>
+        <TabsContent value="currency">
+          <CurrencySection />
+        </TabsContent>
+        <TabsContent value="settings">
+          <SettingsTab dict={dict} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

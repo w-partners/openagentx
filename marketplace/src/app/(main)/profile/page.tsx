@@ -1,13 +1,16 @@
+'use client';
+
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { JOB_STATUS_LABELS, JOB_STATUS_COLORS } from '@/lib/utils/constants';
 import TopupSection from './topup-section';
 import ReferralSection from './referral-section';
 import RewardSection from './reward-section';
 import TrialCreditBadge from './trial-credit-badge';
+import { useDict } from '@/i18n/client';
 
 // Demo user data (replace with API/session fetch)
 const demoUser = {
-  nickname: '크립토마스터',
+  nickname: 'CryptoMaster',
   email: 'crypto@example.com',
   wallet_address: '0x1234...abcd',
   balance_usdc: 2450.50,
@@ -17,77 +20,78 @@ const demoUser = {
 };
 
 const jobHistory = [
-  { id: 'j1', agentName: '마켓 센티넬', amount: 50, status: 'completed', date: '2026-03-22' },
-  { id: 'j2', agentName: '트레이드 봇 프로', amount: 100, status: 'completed', date: '2026-03-18' },
-  { id: 'j3', agentName: 'DeFi 옵티마이저', amount: 80, status: 'processing', date: '2026-03-15' },
-  { id: 'j4', agentName: '온체인 탐정', amount: 30, status: 'completed', date: '2026-03-10' },
-  { id: 'j5', agentName: '리스크 가디언', amount: 60, status: 'failed', date: '2026-03-05' },
+  { id: 'j1', agentName: 'Market Sentinel', amount: 50, status: 'completed', date: '2026-03-22' },
+  { id: 'j2', agentName: 'TradBot Pro', amount: 100, status: 'completed', date: '2026-03-18' },
+  { id: 'j3', agentName: 'DeFi Optimizer', amount: 80, status: 'processing', date: '2026-03-15' },
+  { id: 'j4', agentName: 'OnChain Detective', amount: 30, status: 'completed', date: '2026-03-10' },
+  { id: 'j5', agentName: 'Risk Guardian', amount: 60, status: 'failed', date: '2026-03-05' },
 ];
 
 const favoriteAgents = [
-  { id: 'a1', name: '마켓 센티넬', category: '시장 분석', avgRating: 4.8 },
-  { id: 'a2', name: '트레이드 봇 프로', category: '자동 거래', avgRating: 4.6 },
-  { id: 'a3', name: '리스크 가디언', category: '리스크 관리', avgRating: 4.9 },
+  { id: 'a1', name: 'Market Sentinel', category: 'Market Analysis', avgRating: 4.8 },
+  { id: 'a2', name: 'TradBot Pro', category: 'Auto Trading', avgRating: 4.6 },
+  { id: 'a3', name: 'Risk Guardian', category: 'Risk Management', avgRating: 4.9 },
 ];
 
 const ROLE_LABELS: Record<string, string> = {
-  buyer: '구매자',
-  seller: '판매자',
-  admin: '관리자',
+  buyer: 'Buyer',
+  seller: 'Seller',
+  admin: 'Admin',
 };
 
 export default function ProfilePage() {
+  const dict = useDict();
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold">내 프로필</h1>
+        <h1 className="text-3xl font-bold">{dict.profilePage.title}</h1>
         <p className="text-muted-foreground">
-          계정 정보를 확인하고 관리하세요
+          {dict.profilePage.description}
         </p>
       </div>
 
-      {/* 체험 크레딧 배지 */}
+      {/* Trial credit badge */}
       <TrialCreditBadge />
 
       {/* User info */}
       <Card>
         <CardHeader>
-          <CardTitle>기본 정보</CardTitle>
+          <CardTitle>{dict.profilePage.basicInfo}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <label className="text-sm text-muted-foreground">닉네임</label>
+                <label className="text-sm text-muted-foreground">{dict.profilePage.nickname}</label>
                 <p className="font-medium">{demoUser.nickname}</p>
               </div>
               <div>
-                <label className="text-sm text-muted-foreground">이메일</label>
+                <label className="text-sm text-muted-foreground">{dict.profilePage.email}</label>
                 <p className="font-medium">{demoUser.email}</p>
               </div>
               <div>
-                <label className="text-sm text-muted-foreground">역할</label>
+                <label className="text-sm text-muted-foreground">{dict.profilePage.role}</label>
                 <p className="font-medium">{ROLE_LABELS[demoUser.role] ?? demoUser.role}</p>
               </div>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-sm text-muted-foreground">지갑 주소</label>
+                <label className="text-sm text-muted-foreground">{dict.profilePage.walletAddress}</label>
                 <p className="font-medium font-mono text-sm">{demoUser.wallet_address}</p>
               </div>
               <div>
-                <label className="text-sm text-muted-foreground">크레딧 잔액</label>
+                <label className="text-sm text-muted-foreground">{dict.profilePage.creditBalance}</label>
                 <p className="text-2xl font-bold text-primary">
-                  $ {demoUser.balance_usdc.toLocaleString()} 크레딧
+                  $ {demoUser.balance_usdc.toLocaleString()} Credits
                 </p>
               </div>
               <div>
-                <label className="text-sm text-muted-foreground">인증 상태</label>
+                <label className="text-sm text-muted-foreground">{dict.profilePage.verificationStatus}</label>
                 <p className="font-medium">
                   {demoUser.is_verified ? (
-                    <span className="text-green-600 dark:text-green-400">인증 완료</span>
+                    <span className="text-green-600 dark:text-green-400">{dict.profilePage.verified}</span>
                   ) : (
-                    <span className="text-yellow-600 dark:text-yellow-400">미인증</span>
+                    <span className="text-yellow-600 dark:text-yellow-400">{dict.profilePage.unverified}</span>
                   )}
                 </p>
               </div>
@@ -95,7 +99,7 @@ export default function ProfilePage() {
           </div>
           <div className="mt-6 pt-4 border-t">
             <button className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-              프로필 수정
+              Edit Profile
             </button>
           </div>
         </CardContent>
@@ -105,7 +109,7 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
-            <CardDescription>가용 크레딧</CardDescription>
+            <CardDescription>{dict.profilePage.availableCredits}</CardDescription>
             <CardTitle className="text-2xl">
               $ {demoUser.balance_usdc.toLocaleString()}
             </CardTitle>
@@ -116,10 +120,10 @@ export default function ProfilePage() {
                 href="#topup"
                 className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
               >
-                충전하기
+                Top Up
               </a>
               <button className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors">
-                출금
+                Withdraw
               </button>
             </div>
           </CardContent>
@@ -127,15 +131,15 @@ export default function ProfilePage() {
 
         <Card>
           <CardHeader>
-            <CardDescription>총 구매 작업</CardDescription>
-            <CardTitle className="text-2xl">{jobHistory.length}건</CardTitle>
+            <CardDescription>{dict.profilePage.totalPurchases}</CardDescription>
+            <CardTitle className="text-2xl">{jobHistory.length}</CardTitle>
           </CardHeader>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardDescription>즐겨찾기 에이전트</CardDescription>
-            <CardTitle className="text-2xl">{favoriteAgents.length}개</CardTitle>
+            <CardDescription>{dict.profilePage.favoriteAgents}</CardDescription>
+            <CardTitle className="text-2xl">{favoriteAgents.length}</CardTitle>
           </CardHeader>
         </Card>
       </div>
@@ -158,13 +162,13 @@ export default function ProfilePage() {
       {/* Job history */}
       <Card>
         <CardHeader>
-          <CardTitle>작업 내역</CardTitle>
-          <CardDescription>최근 이용한 에이전트 작업 기록</CardDescription>
+          <CardTitle>{dict.profilePage.jobHistory}</CardTitle>
+          <CardDescription>{dict.profilePage.jobHistoryDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           {jobHistory.length === 0 ? (
             <p className="text-muted-foreground text-center py-4">
-              아직 이용 내역이 없습니다
+              {dict.profilePage.noJobHistory}
             </p>
           ) : (
             <div className="space-y-3">
@@ -193,13 +197,13 @@ export default function ProfilePage() {
       {/* Favorites */}
       <Card>
         <CardHeader>
-          <CardTitle>즐겨찾기</CardTitle>
-          <CardDescription>관심 에이전트 목록</CardDescription>
+          <CardTitle>{dict.profilePage.favorites}</CardTitle>
+          <CardDescription>{dict.profilePage.favoritesDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           {favoriteAgents.length === 0 ? (
             <p className="text-muted-foreground text-center py-4">
-              즐겨찾기한 에이전트가 없습니다
+              {dict.profilePage.noFavorites}
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -212,7 +216,7 @@ export default function ProfilePage() {
                   <p className="font-medium">{agent.name}</p>
                   <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
                     <span>{agent.category}</span>
-                    <span>평점 {agent.avgRating} / 5.0</span>
+                    <span>Rating {agent.avgRating} / 5.0</span>
                   </div>
                 </a>
               ))}
@@ -227,10 +231,10 @@ export default function ProfilePage() {
           href="/dashboard"
           className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         >
-          판매자 대시보드
+          Seller Dashboard
         </a>
         <p className="text-xs text-muted-foreground self-center">
-          가입일: {demoUser.created_at}
+          Joined: {demoUser.created_at}
         </p>
       </div>
     </div>

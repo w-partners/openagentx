@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { useDict } from '@/i18n/client';
 
 interface TopupRequest {
   id: string;
@@ -13,9 +14,9 @@ interface TopupRequest {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: '대기 중',
-  approved: '승인됨',
-  rejected: '거부됨',
+  pending: 'Pending',
+  approved: 'Approved',
+  rejected: 'Rejected',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -25,6 +26,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function TopupSection() {
+  const dict = useDict();
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -57,7 +59,7 @@ export default function TopupSection() {
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount < 1 || numAmount > 1000) {
-      setError('충전 금액은 $1 ~ $1,000 범위여야 합니다');
+      setError(dict.topupSection.amountRangeError);
       return;
     }
 
@@ -70,14 +72,14 @@ export default function TopupSection() {
       });
       const data = await res.json();
       if (res.ok) {
-        setMessage('충전 요청이 제출되었습니다. 관리자 승인을 기다려주세요.');
+        setMessage(dict.topupSection.requestSuccess);
         setAmount('');
         fetchHistory();
       } else {
-        setError(data.error ?? '요청 처리 중 오류가 발생했습니다');
+        setError(data.error ?? dict.topupSection.requestError);
       }
     } catch {
-      setError('네트워크 오류가 발생했습니다');
+      setError(dict.common.networkError);
     } finally {
       setLoading(false);
     }
@@ -86,9 +88,9 @@ export default function TopupSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>크레딧 충전하기</CardTitle>
+        <CardTitle>{dict.topupSection.title}</CardTitle>
         <CardDescription>
-          충전 금액을 입력하고 요청하세요. 관리자가 입금 확인 후 잔액이 충전됩니다.
+          {dict.topupSection.description}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -96,7 +98,7 @@ export default function TopupSection() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="topup-amount" className="text-sm font-medium">
-              충전 금액 (달러)
+              {dict.topupSection.amountLabel}
             </label>
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold">$</span>
@@ -106,7 +108,7 @@ export default function TopupSection() {
                 min="1"
                 max="1000"
                 step="0.01"
-                placeholder="충전할 금액 입력"
+                placeholder={dict.topupSection.amountPlaceholder}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="flex h-10 w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -117,11 +119,11 @@ export default function TopupSection() {
                 disabled={loading}
                 className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                {loading ? '요청 중...' : '충전 요청'}
+                {loading ? dict.topupSection.requesting : dict.topupSection.requestBtn}
               </button>
             </div>
             <p className="text-xs text-muted-foreground">
-              최소 $1 ~ 최대 $1,000
+              Min $1 — Max $1,000
             </p>
           </div>
           {message && (
@@ -148,11 +150,11 @@ export default function TopupSection() {
 
         {/* Top-up history */}
         <div className="border-t pt-4">
-          <h3 className="text-sm font-semibold mb-3">충전 요청 내역</h3>
+          <h3 className="text-sm font-semibold mb-3">{dict.topupSection.historyTitle}</h3>
           {fetching ? (
-            <p className="text-sm text-muted-foreground">불러오는 중...</p>
+            <p className="text-sm text-muted-foreground">{dict.common.loading}</p>
           ) : requests.length === 0 ? (
-            <p className="text-sm text-muted-foreground">충전 요청 내역이 없습니다</p>
+            <p className="text-sm text-muted-foreground">{dict.topupSection.noHistory}</p>
           ) : (
             <div className="space-y-2">
               {requests.map((req) => (
@@ -163,7 +165,7 @@ export default function TopupSection() {
                   <div className="space-y-0.5">
                     <p className="text-sm font-medium">$ {Number(req.amount).toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(req.created_at).toLocaleDateString('ko-KR')}
+                      {new Date(req.created_at).toLocaleDateString('en-US')}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

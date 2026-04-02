@@ -10,16 +10,29 @@ import {
 } from '@/lib/auth/config';
 import { createAccessToken, createRefreshToken, verifyToken, rotateRefreshToken, blacklistToken } from '@/lib/auth/jwt';
 import { query } from '@/lib/db/pool';
-import { REFRESH_TOKEN_EXPIRY } from '@/lib/auth/config';
+import { ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_EXPIRY } from '@/lib/auth/config';
 import { apiJson, apiCatchError } from '@/lib/utils/api-response';
 import * as referralRepo from '@/lib/db/repositories/referrals';
 import { processSignupBonus } from '@/lib/db/repositories/rewards';
 import { NextResponse } from 'next/server';
 
-function setRefreshCookie(response: NextResponse, token: string): NextResponse {
-  response.cookies.set('refresh_token', token, {
+function isSecureContext(): boolean {
+  // Behind Cloudflare proxy — always HTTPS to end users
+  return process.env.COOKIE_SECURE === 'true';
+}
+
+function setAuthCookies(response: NextResponse, accessToken: string, refreshToken: string): NextResponse {
+  const secure = isSecureContext();
+  response.cookies.set('access_token', accessToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure,
+    sameSite: 'lax',
+    maxAge: ACCESS_TOKEN_EXPIRY,
+    path: '/',
+  });
+  response.cookies.set('refresh_token', refreshToken, {
+    httpOnly: true,
+    secure,
     sameSite: 'lax',
     maxAge: REFRESH_TOKEN_EXPIRY,
     path: '/',
@@ -63,7 +76,7 @@ export async function POST(request: NextRequest) {
         const refreshToken = await createRefreshToken(user);
 
         const response = apiJson({ data: { user, accessToken, signupBonus: bonusAmount } });
-        return setRefreshCookie(response, refreshToken);
+        return setAuthCookies(response, accessToken, refreshToken);
       } catch (err) {
         return apiCatchError(err, 409);
       }
@@ -80,7 +93,7 @@ export async function POST(request: NextRequest) {
         const refreshToken = await createRefreshToken(user);
 
         const response = apiJson({ data: { user, accessToken } });
-        return setRefreshCookie(response, refreshToken);
+        return setAuthCookies(response, accessToken, refreshToken);
       } catch (err) {
         return apiCatchError(err, 401);
       }
@@ -106,7 +119,7 @@ export async function POST(request: NextRequest) {
         const refreshToken = await createRefreshToken(user);
 
         const response = apiJson({ data: { user, accessToken } });
-        return setRefreshCookie(response, refreshToken);
+        return setAuthCookies(response, accessToken, refreshToken);
       } catch (err) {
         return apiCatchError(err, 401);
       }
@@ -141,7 +154,7 @@ export async function POST(request: NextRequest) {
 
       const tokens = await rotateRefreshToken(refreshToken, user);
       const response = apiJson({ data: { user, accessToken: tokens.accessToken } });
-      return setRefreshCookie(response, tokens.refreshToken);
+      return setAuthCookies(response, tokens.accessToken, tokens.refreshToken);
     }
 
     case 'logout': {
@@ -149,7 +162,8 @@ export async function POST(request: NextRequest) {
       if (refreshToken) {
         await blacklistToken(refreshToken, REFRESH_TOKEN_EXPIRY);
       }
-      const response = apiJson({ data: { message: '로그아웃 완료' } });
+      const response = apiJson({ data: { message: 'Logged out' } });
+      response.cookies.delete('access_token');
       response.cookies.delete('refresh_token');
       return response;
     }

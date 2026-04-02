@@ -7,20 +7,20 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CATEGORY_LABELS } from '@/lib/utils/constants';
+import { useDict } from '@/i18n/client';
 
 const AUCTION_STATUS_LABELS: Record<string, string> = {
-  open: '진행 중',
-  awarded: '낙찰',
-  expired: '만료',
-  cancelled: '취소',
+  open: 'In Progress',
+  awarded: 'Awarded',
+  expired: 'Expired',
+  cancelled: 'Cancelled',
 };
 
 const BID_STATUS_LABELS: Record<string, string> = {
-  pending: '대기',
-  selected: '낙찰',
-  rejected: '미선정',
-  refunded: '환불됨',
+  pending: 'Pending',
+  selected: 'Awarded',
+  rejected: 'Not Selected',
+  refunded: 'Refunded',
 };
 
 interface AuctionBid {
@@ -55,15 +55,16 @@ interface AuctionDetail {
 
 function timeRemaining(expiresAt: string): string {
   const diff = new Date(expiresAt).getTime() - Date.now();
-  if (diff <= 0) return '만료됨';
+  if (diff <= 0) return 'Expired';
   const hours = Math.floor(diff / 3600000);
   const minutes = Math.floor((diff % 3600000) / 60000);
-  if (hours > 24) return `${Math.floor(hours / 24)}일 ${hours % 24}시간 남음`;
-  if (hours > 0) return `${hours}시간 ${minutes}분 남음`;
-  return `${minutes}분 남음`;
+  if (hours > 24) return `${Math.floor(hours / 24)}d ${hours % 24}h remaining`;
+  if (hours > 0) return `${hours}h ${minutes}m remaining`;
+  return `${minutes}m remaining`;
 }
 
 export default function AuctionDetailPage() {
+  const dict = useDict();
   const params = useParams();
   const auctionId = params.id as string;
 
@@ -85,9 +86,9 @@ export default function AuctionDetailPage() {
       .then((r) => r.json())
       .then((res) => {
         if (res.success) setAuction(res.data);
-        else setError(res.error ?? '경매를 불러올 수 없습니다');
+        else setError(res.error ?? '{dict.auctionDetail.loadError}');
       })
-      .catch(() => setError('네트워크 오류'))
+      .catch(() => setError(dict.common.networkError))
       .finally(() => setLoading(false));
   };
 
@@ -116,7 +117,7 @@ export default function AuctionDetailPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setFormMsg('입찰이 완료되었습니다!');
+        setFormMsg(dict.auctionDetail.bidComplete);
         setBidFee('0');
         setOfferPrice('');
         setOfferDesc('');
@@ -124,17 +125,17 @@ export default function AuctionDetailPage() {
         setEstimatedTime('');
         fetchAuction();
       } else {
-        setFormMsg(data.error ?? '입찰에 실패했습니다');
+        setFormMsg(data.error ?? dict.auctionDetail.bidFailed);
       }
     } catch {
-      setFormMsg('네트워크 오류');
+      setFormMsg(dict.common.networkError);
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleSelectBid = async (bidId: string) => {
-    if (!confirm('이 입찰을 선택하시겠습니까?')) return;
+    if (!confirm(dict.auctionDetail.confirmSelect)) return;
     try {
       const res = await fetch('/api/auctions', {
         method: 'POST',
@@ -147,37 +148,37 @@ export default function AuctionDetailPage() {
       });
       const data = await res.json();
       if (data.success) {
-        alert('낙찰이 완료되었습니다!');
+        alert(dict.auctionDetail.awardComplete);
         fetchAuction();
       } else {
-        alert(data.error ?? '선택에 실패했습니다');
+        alert(data.error ?? dict.auctionDetail.selectFailed);
       }
     } catch {
-      alert('네트워크 오류');
+      alert(dict.common.networkError);
     }
   };
 
   if (loading) {
-    return <div className="text-center py-12 text-muted-foreground">로딩 중...</div>;
+    return <div className="text-center py-12 text-muted-foreground">{dict.common.loading}</div>;
   }
 
   if (error || !auction) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground mb-4">{error || '경매를 찾을 수 없습니다'}</p>
-        <Link href="/auctions"><Button variant="outline">목록으로</Button></Link>
+        <p className="text-muted-foreground mb-4">{error || '{dict.auctionDetail.notFound}'}</p>
+        <Link href="/auctions"><Button variant="outline">{dict.common.backToList}</Button></Link>
       </div>
     );
   }
 
-  const categoryLabel = CATEGORY_LABELS[auction.category] ?? auction.category;
+  const categoryLabel = dict.categories[auction.category as keyof typeof dict.categories] ?? auction.category;
   const isOpen = auction.status === 'open';
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Back link */}
       <Link href="/auctions" className="text-sm text-muted-foreground hover:text-foreground">
-        &larr; 경매 목록
+        {dict.auctionDetail.backToList}
       </Link>
 
       {/* Auction info */}
@@ -202,22 +203,22 @@ export default function AuctionDetailPage() {
         <CardContent>
           <div className="flex flex-wrap gap-6 text-sm">
             <div>
-              <span className="text-muted-foreground">예산: </span>
+              <span className="text-muted-foreground">Budget: </span>
               <span className="font-semibold">
-                {auction.budget_max ? `${Number(auction.budget_max).toLocaleString()} USDC` : '미정'}
+                {auction.budget_max ? `$${Number(auction.budget_max).toLocaleString()}` : 'TBD'}
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground">입찰 수: </span>
-              <span className="font-semibold">{auction.bid_count}건</span>
+              <span className="text-muted-foreground">Bids: </span>
+              <span className="font-semibold">{auction.bid_count}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">등록일: </span>
-              <span>{new Date(auction.created_at).toLocaleDateString('ko-KR')}</span>
+              <span className="text-muted-foreground">Created: </span>
+              <span>{new Date(auction.created_at).toLocaleDateString('en-US')}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">마감일: </span>
-              <span>{new Date(auction.expires_at).toLocaleString('ko-KR')}</span>
+              <span className="text-muted-foreground">Deadline: </span>
+              <span>{new Date(auction.expires_at).toLocaleString('en-US')}</span>
             </div>
           </div>
         </CardContent>
@@ -225,9 +226,9 @@ export default function AuctionDetailPage() {
 
       {/* Bids list */}
       <div className="space-y-4">
-        <h2 className="text-xl font-bold">입찰 목록 ({auction.bids.length}건)</h2>
+        <h2 className="text-xl font-bold">Bid List ({auction.bids.length})</h2>
         {auction.bids.length === 0 ? (
-          <p className="text-muted-foreground py-4">아직 입찰이 없습니다</p>
+          <p className="text-muted-foreground py-4">{dict.auctionDetail.noBids}</p>
         ) : (
           <div className="space-y-3">
             {auction.bids.map((bid) => (
@@ -237,14 +238,14 @@ export default function AuctionDetailPage() {
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-3 flex-wrap">
                         <span className="font-semibold">
-                          {bid.agent_name ?? '에이전트'}
+                          {bid.agent_name ?? 'Agent'}
                         </span>
                         {bid.agent_slug && (
                           <Link
                             href={`/agents/${bid.agent_slug}`}
                             className="text-xs text-primary hover:underline"
                           >
-                            프로필 보기
+                            {dict.auctionDetail.viewProfile}
                           </Link>
                         )}
                         <Badge variant="outline">#{bid.rank ?? '-'}</Badge>
@@ -257,25 +258,25 @@ export default function AuctionDetailPage() {
                       </p>
                       <div className="flex flex-wrap gap-4 text-sm">
                         <span>
-                          <span className="text-muted-foreground">제안가: </span>
+                          <span className="text-muted-foreground">Offer: </span>
                           <span className="font-semibold text-primary">
-                            {Number(bid.offer_price).toLocaleString()} USDC
+                            ${Number(bid.offer_price).toLocaleString()}
                           </span>
                         </span>
                         <span>
-                          <span className="text-muted-foreground">입찰 수수료: </span>
+                          <span className="text-muted-foreground">Bid Fee: </span>
                           <span className="font-semibold">
-                            {Number(bid.bid_fee).toLocaleString()} USDC
+                            ${Number(bid.bid_fee).toLocaleString()}
                           </span>
                         </span>
                         {bid.estimated_time && (
                           <span>
-                            <span className="text-muted-foreground">예상 소요: </span>
+                            <span className="text-muted-foreground">Est. Time: </span>
                             <span>{bid.estimated_time}</span>
                           </span>
                         )}
                         <span className="text-muted-foreground">
-                          {bid.provider_name ?? '제공자'}
+                          {bid.provider_name ?? 'Provider'}
                         </span>
                       </div>
                     </div>
@@ -284,7 +285,7 @@ export default function AuctionDetailPage() {
                         size="sm"
                         onClick={() => handleSelectBid(bid.id)}
                       >
-                        선택
+                        Select
                       </Button>
                     )}
                   </div>
@@ -299,25 +300,25 @@ export default function AuctionDetailPage() {
       {isOpen && (
         <Card>
           <CardHeader>
-            <CardTitle>입찰하기</CardTitle>
+            <CardTitle>{dict.auctionDetail.placeBid}</CardTitle>
             <CardDescription>
-              입찰 수수료를 지불하고 서비스를 제안하세요. 수수료가 높을수록 상위 노출됩니다.
+              Pay a bid fee and propose your service. Higher fees get better visibility.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handlePlaceBid} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">에이전트 ID</label>
+                  <label className="text-sm font-medium">{dict.auctionDetail.agentId}</label>
                   <Input
                     value={agentId}
                     onChange={(e) => setAgentId(e.target.value)}
-                    placeholder="에이전트 UUID"
+                    placeholder={dict.auctionDetail.agentIdPlaceholder}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">입찰 수수료 (USDC)</label>
+                  <label className="text-sm font-medium">{dict.auctionDetail.bidFeeLabel}</label>
                   <Input
                     type="number"
                     step="0.01"
@@ -326,10 +327,10 @@ export default function AuctionDetailPage() {
                     onChange={(e) => setBidFee(e.target.value)}
                     placeholder="0.00"
                   />
-                  <p className="text-xs text-muted-foreground">높을수록 상위 노출 (잔액에서 차감)</p>
+                  <p className="text-xs text-muted-foreground">{dict.auctionDetail.bidFeeNote}</p>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">제안 가격 (USDC)</label>
+                  <label className="text-sm font-medium">{dict.auctionDetail.offerPriceLabel}</label>
                   <Input
                     type="number"
                     step="0.01"
@@ -341,32 +342,32 @@ export default function AuctionDetailPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">예상 소요 시간</label>
+                  <label className="text-sm font-medium">{dict.auctionDetail.estimatedTimeLabel}</label>
                   <Input
                     value={estimatedTime}
                     onChange={(e) => setEstimatedTime(e.target.value)}
-                    placeholder="예: 2시간, 1일"
+                    placeholder={dict.auctionDetail.estimatedTimePlaceholder}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">제안 설명</label>
+                <label className="text-sm font-medium">{dict.auctionDetail.offerDescLabel}</label>
                 <textarea
                   className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   value={offerDesc}
                   onChange={(e) => setOfferDesc(e.target.value)}
-                  placeholder="어떤 서비스를 어떻게 제공할 수 있는지 설명해주세요 (최소 10자)"
+                  placeholder="Describe what service you can provide and how (min 10 chars)"
                   required
                   minLength={10}
                 />
               </div>
               {formMsg && (
-                <p className={`text-sm ${formMsg.includes('완료') ? 'text-green-600' : 'text-red-600'}`}>
+                <p className={`text-sm ${formMsg.includes('success') || formMsg.includes('complete') ? 'text-green-600' : 'text-red-600'}`}>
                   {formMsg}
                 </p>
               )}
               <Button type="submit" disabled={submitting}>
-                {submitting ? '처리 중...' : '입찰하기'}
+                {submitting ? dict.common.processing : dict.auctionDetail.submitBid}
               </Button>
             </form>
           </CardContent>

@@ -3,13 +3,13 @@ module.exports = {
     {
       name: 'openagentx',
       script: 'node_modules/.bin/next',
-      args: 'start -p 3100',
+      args: 'start -p 3101',
       cwd: '/home/llm/projects/cryptointel/marketplace',
       instances: 1,
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 3100,
+        PORT: 3101,
       },
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
       error_file: 'logs/pm2-error.log',

@@ -6,13 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { SERVICE_CATEGORIES, CATEGORY_LABELS } from '@/lib/utils/constants';
+import { SERVICE_CATEGORIES } from '@/lib/utils/constants';
+import { useDict } from '@/i18n/client';
 
 const STEPS = [
-  { id: 1, label: '기본 정보' },
-  { id: 2, label: '서비스 설정' },
-  { id: 3, label: '수수료 설정' },
-  { id: 4, label: '확인 및 등록' },
+  { id: 1, label: 'Basic Info' },
+  { id: 2, label: 'Service Setup' },
+  { id: 3, label: 'Commission Setup' },
+  { id: 4, label: 'Review & Register' },
 ] as const;
 
 interface ServiceItem {
@@ -30,7 +31,23 @@ interface FormData {
   logoUrl: string;
   services: ServiceItem[];
   commissionRate: number;
+  serverUrl: string;
 }
+
+const PRICING_GUIDE: Record<string, { min: number; max: number; avg: number; examples: string[] }> = {
+  coding: { min: 0.1, max: 50, avg: 6.67, examples: ['Simple code review: $0.5-2', 'Bug fix: $5-8', 'Full refactoring: $10-50'] },
+  data_analysis: { min: 0.1, max: 30, avg: 4.50, examples: ['Chart analysis: $0.5-4', 'Data summary: $3-5', 'Full report: $10-30'] },
+  content_creation: { min: 0.1, max: 20, avg: 3.00, examples: ['SNS post: $0.1-2', 'Blog post: $2-5', 'Marketing copy: $5-20'] },
+  translation: { min: 0.05, max: 15, avg: 3.50, examples: ['Short text: $0.1-1', 'Document: $2-5', 'Full localization: $5-15'] },
+  marketing: { min: 0.5, max: 30, avg: 4.50, examples: ['SEO audit: $3-6', 'Ad copy: $1-3', 'Full strategy: $10-30'] },
+  customer_service: { min: 0.05, max: 10, avg: 1.00, examples: ['Single query: $0.05-0.5', 'Support session: $1-5', 'Full onboarding: $5-10'] },
+  research: { min: 0.5, max: 50, avg: 5.00, examples: ['Quick lookup: $0.5-2', 'Research report: $5-15', 'Deep analysis: $15-50'] },
+  finance: { min: 0.5, max: 50, avg: 5.00, examples: ['Portfolio check: $0.5-2', 'Investment analysis: $5-10', 'Full advisory: $10-50'] },
+  crypto: { min: 0.1, max: 30, avg: 5.00, examples: ['Token scan: $0.1-2', 'Market analysis: $3-8', 'Strategy report: $10-30'] },
+  design: { min: 1, max: 50, avg: 8.00, examples: ['Icon generation: $1-3', 'Banner design: $5-15', 'Full branding: $15-50'] },
+  education: { min: 0.05, max: 10, avg: 1.50, examples: ['Concept explanation: $0.05-1', 'Quiz creation: $1-2', 'Full course: $5-10'] },
+  automation: { min: 0.5, max: 50, avg: 7.50, examples: ['Script: $2-5', 'Workflow design: $5-10', 'Full RPA setup: $15-50'] },
+};
 
 const INITIAL_FORM: FormData = {
   name: '',
@@ -40,15 +57,23 @@ const INITIAL_FORM: FormData = {
   tags: [],
   logoUrl: '',
   services: [{ name: '', description: '', price: '' }],
-  commissionRate: 5,
+  commissionRate: 0.5,
+  serverUrl: '',
 };
 
 export default function AgentRegisterPage() {
+  const dict = useDict();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [serverTestResult, setServerTestResult] = useState<{
+    status: 'online' | 'offline' | 'error' | null;
+    latency?: number;
+    message?: string;
+  }>({ status: null });
+  const [isTesting, setIsTesting] = useState(false);
 
   function updateForm(updates: Partial<FormData>) {
     setForm((prev) => ({ ...prev, ...updates }));
@@ -84,6 +109,35 @@ export default function AgentRegisterPage() {
     }
   }
 
+  async function testServerConnection() {
+    if (!form.serverUrl) return;
+    setIsTesting(true);
+    setServerTestResult({ status: null });
+    try {
+      const startTime = Date.now();
+      const healthUrl = form.serverUrl.replace(/\/$/, '') + '/health';
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const response = await fetch(healthUrl, { method: 'GET', signal: controller.signal });
+      clearTimeout(timeout);
+      const latency = Date.now() - startTime;
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === 'ok') {
+          setServerTestResult({ status: 'online', latency, message: `OK (${latency}ms)` });
+        } else {
+          setServerTestResult({ status: 'error', latency, message: 'Unexpected response' });
+        }
+      } else {
+        setServerTestResult({ status: 'error', message: `HTTP ${response.status}` });
+      }
+    } catch {
+      setServerTestResult({ status: 'offline', message: 'Connection failed or timed out' });
+    } finally {
+      setIsTesting(false);
+    }
+  }
+
   function canProceed(): boolean {
     switch (step) {
       case 1:
@@ -91,7 +145,7 @@ export default function AgentRegisterPage() {
       case 2:
         return form.services.every((s) => s.name.trim() && s.price.trim());
       case 3:
-        return form.commissionRate >= 0 && form.commissionRate <= 50;
+        return form.commissionRate >= 0 && form.commissionRate <= 1;
       default:
         return true;
     }
@@ -118,12 +172,12 @@ export default function AgentRegisterPage() {
 
       const data = await response.json();
       if (data.success) {
-        setSubmitResult({ success: true, message: '에이전트가 성공적으로 등록되었습니다! 검토 후 활성화됩니다.' });
+        setSubmitResult({ success: true, message: '{dict.agentRegister.successMessage}' });
       } else {
-        setSubmitResult({ success: false, message: data.error ?? '등록에 실패했습니다.' });
+        setSubmitResult({ success: false, message: data.error ?? dict.agentRegister.failedMessage });
       }
     } catch {
-      setSubmitResult({ success: false, message: '네트워크 오류가 발생했습니다.' });
+      setSubmitResult({ success: false, message: dict.common.networkError + '.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -132,9 +186,9 @@ export default function AgentRegisterPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold">에이전트 등록</h1>
+        <h1 className="text-3xl font-bold">{dict.agentRegister.title}</h1>
         <p className="text-muted-foreground">
-          AI 에이전트를 마켓플레이스에 등록하고 수익을 창출하세요
+          {dict.agentRegister.description}
         </p>
       </div>
 
@@ -173,43 +227,43 @@ export default function AgentRegisterPage() {
       {step === 1 && (
         <Card>
           <CardHeader>
-            <CardTitle>기본 정보</CardTitle>
+            <CardTitle>{dict.agentRegister.basicInfo}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">에이전트 이름 *</label>
+              <label className="text-sm font-medium">{dict.agentRegister.agentName}</label>
               <Input
                 value={form.name}
                 onChange={(e) => updateForm({ name: e.target.value })}
-                placeholder="예: 마켓 센티넬"
+                placeholder={dict.agentRegister.agentNamePlaceholder}
                 maxLength={100}
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">설명 (영문) *</label>
+              <label className="text-sm font-medium">{dict.agentRegister.descriptionEn}</label>
               <textarea
                 value={form.description}
                 onChange={(e) => updateForm({ description: e.target.value })}
-                placeholder="에이전트의 기능과 특징을 영문으로 설명하세요 (최소 10자)"
+                placeholder="Describe the agent's features and capabilities in English (min 10 chars)"
                 className="flex min-h-24 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 maxLength={5000}
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">설명 (한국어)</label>
+              <label className="text-sm font-medium">{dict.agentRegister.descriptionKo}</label>
               <textarea
                 value={form.descriptionKo}
                 onChange={(e) => updateForm({ descriptionKo: e.target.value })}
-                placeholder="에이전트의 기능과 특징을 한국어로 설명하세요 (선택)"
+                placeholder="Describe the agent's features and capabilities in Korean (optional)"
                 className="flex min-h-24 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 maxLength={5000}
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">카테고리 *</label>
+              <label className="text-sm font-medium">{dict.agentRegister.categoryLabel}</label>
               <div className="flex flex-wrap gap-2">
                 {SERVICE_CATEGORIES.map((cat) => (
                   <button
@@ -222,14 +276,14 @@ export default function AgentRegisterPage() {
                         : 'hover:bg-accent'
                     }`}
                   >
-                    {CATEGORY_LABELS[cat] ?? cat}
+                    {dict.categories[cat as keyof typeof dict.categories] ?? cat}
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">태그</label>
+              <label className="text-sm font-medium">{dict.agentRegister.tagsLabel}</label>
               <div className="flex gap-2">
                 <Input
                   value={tagInput}
@@ -240,11 +294,11 @@ export default function AgentRegisterPage() {
                       addTag();
                     }
                   }}
-                  placeholder="태그 입력 후 Enter"
+                  placeholder={dict.agentRegister.tagPlaceholder}
                   className="flex-1"
                 />
                 <Button type="button" variant="outline" onClick={addTag}>
-                  추가
+                  Add
                 </Button>
               </div>
               {form.tags.length > 0 && (
@@ -266,7 +320,7 @@ export default function AgentRegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">로고 URL (선택)</label>
+              <label className="text-sm font-medium">{dict.agentRegister.logoUrl}</label>
               <Input
                 value={form.logoUrl}
                 onChange={(e) => updateForm({ logoUrl: e.target.value })}
@@ -282,60 +336,163 @@ export default function AgentRegisterPage() {
       {step === 2 && (
         <Card>
           <CardHeader>
-            <CardTitle>서비스 설정</CardTitle>
+            <CardTitle>{dict.agentRegister.serviceSetup}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              에이전트가 제공하는 서비스를 등록하세요. 최소 1개 이상의 서비스가 필요합니다.
+              Register the services your agent provides. At least 1 service is required.
             </p>
 
             {form.services.map((service, i) => (
               <div key={i} className="space-y-3 rounded-lg border p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">서비스 {i + 1}</span>
+                  <span className="text-sm font-medium">Service {i + 1}</span>
                   {form.services.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeService(i)}
                       className="text-xs text-destructive hover:underline"
                     >
-                      삭제
+                      Delete
                     </button>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs text-muted-foreground">서비스 이름 *</label>
+                  <label className="text-xs text-muted-foreground">Service Name *</label>
                   <Input
                     value={service.name}
                     onChange={(e) => updateService(i, 'name', e.target.value)}
-                    placeholder="예: 기본 분석"
+                    placeholder="e.g. Basic Analysis"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs text-muted-foreground">설명</label>
+                  <label className="text-xs text-muted-foreground">Description</label>
                   <Input
                     value={service.description}
                     onChange={(e) => updateService(i, 'description', e.target.value)}
-                    placeholder="예: 단일 토큰 기술적 분석 리포트"
+                    placeholder="e.g. Single token technical analysis report"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs text-muted-foreground">가격 *</label>
+                  <label className="text-xs text-muted-foreground">Price *</label>
                   <Input
                     value={service.price}
                     onChange={(e) => updateService(i, 'price', e.target.value)}
-                    placeholder="예: 10 USDC"
+                    placeholder="e.g. $10"
                   />
                 </div>
               </div>
             ))}
 
             <Button type="button" variant="outline" onClick={addService} className="w-full">
-              + 서비스 추가
+              + Add Service
             </Button>
+
+            {/* Server URL */}
+            <div className="rounded-lg border border-dashed p-4 space-y-3">
+              <h4 className="text-sm font-medium">{dict.serverGuide.serverSection}</h4>
+              <p className="text-xs text-muted-foreground">{dict.serverGuide.serverSectionDesc}</p>
+              <div className="flex gap-2">
+                <Input
+                  value={form.serverUrl}
+                  onChange={(e) => updateForm({ serverUrl: e.target.value })}
+                  placeholder={dict.serverGuide.serverUrlPlaceholder}
+                  type="url"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={testServerConnection}
+                  disabled={!form.serverUrl || isTesting}
+                  className="shrink-0"
+                >
+                  {isTesting ? dict.serverGuide.testing : dict.serverGuide.testConnection}
+                </Button>
+              </div>
+              {serverTestResult.status && (
+                <div className={`flex items-center gap-2 text-sm ${
+                  serverTestResult.status === 'online'
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-red-600 dark:text-red-400'
+                }`}>
+                  <span>{serverTestResult.status === 'online' ? '\u{1F7E2}' : '\u{1F534}'}</span>
+                  <span>
+                    {serverTestResult.status === 'online' ? dict.serverGuide.online : dict.serverGuide.offline}
+                    {serverTestResult.latency ? ` (${serverTestResult.latency}ms)` : ''}
+                  </span>
+                  {serverTestResult.message && (
+                    <span className="text-xs text-muted-foreground ml-2">{serverTestResult.message}</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Pricing Guide */}
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-4 space-y-3">
+              <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                {dict.agentRegister.pricingGuide}
+              </h4>
+              {form.category && PRICING_GUIDE[form.category] ? (
+                <>
+                  {/* Range bar */}
+                  <div className="space-y-1.5">
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      {dict.agentRegister.pricingRange
+                        .replace('{min}', String(PRICING_GUIDE[form.category].min))
+                        .replace('{max}', String(PRICING_GUIDE[form.category].max))
+                        .replace('{avg}', String(PRICING_GUIDE[form.category].avg))}
+                    </p>
+                    <div className="relative h-2 w-full rounded-full bg-blue-200 dark:bg-blue-800">
+                      <div
+                        className="absolute h-2 rounded-full bg-blue-500 dark:bg-blue-400"
+                        style={{
+                          left: `${(PRICING_GUIDE[form.category].min / PRICING_GUIDE[form.category].max) * 100}%`,
+                          right: '0%',
+                        }}
+                      />
+                      <div
+                        className="absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-blue-700 dark:bg-blue-200 border-2 border-white dark:border-blue-950"
+                        style={{
+                          left: `${(PRICING_GUIDE[form.category].avg / PRICING_GUIDE[form.category].max) * 100}%`,
+                        }}
+                        title={`avg: $${PRICING_GUIDE[form.category].avg}`}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[10px] text-blue-600 dark:text-blue-400">
+                      <span>${PRICING_GUIDE[form.category].min}</span>
+                      <span>${PRICING_GUIDE[form.category].max}</span>
+                    </div>
+                  </div>
+
+                  {/* Examples */}
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                      {dict.agentRegister.pricingExamples}
+                    </p>
+                    <ul className="space-y-0.5">
+                      {PRICING_GUIDE[form.category].examples.map((ex, i) => (
+                        <li key={i} className="text-xs text-blue-600 dark:text-blue-400">
+                          - {ex}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Micro-payment note */}
+                  <p className="text-[11px] text-blue-500 dark:text-blue-400 italic">
+                    {dict.agentRegister.microPaymentNote}
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-blue-500 dark:text-blue-400">
+                  {dict.agentRegister.selectCategoryForGuide}
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -344,40 +501,42 @@ export default function AgentRegisterPage() {
       {step === 3 && (
         <Card>
           <CardHeader>
-            <CardTitle>수수료 설정</CardTitle>
+            <CardTitle>{dict.agentRegister.commissionSetup}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <p className="text-sm text-muted-foreground">
-              플랫폼 수수료를 설정하세요. 수수료율이 높을수록 검색 노출이 유리합니다.
+              Voluntarily set your visibility commission rate (0-1%). Higher rates improve search visibility. 0% is fine — we never take a cut from your sales.
             </p>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">수수료율</label>
+                <label className="text-sm font-medium">{dict.agentRegister.commissionRate}</label>
                 <span className="text-2xl font-bold">{form.commissionRate}%</span>
               </div>
               <input
                 type="range"
                 min="0"
-                max="50"
+                max="1"
+                step="0.25"
                 value={form.commissionRate}
-                onChange={(e) => updateForm({ commissionRate: parseInt(e.target.value, 10) })}
+                onChange={(e) => updateForm({ commissionRate: parseFloat(e.target.value) })}
                 className="w-full accent-primary"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>0%</span>
-                <span>25%</span>
-                <span>50%</span>
+                <span>0.5%</span>
+                <span>1%</span>
               </div>
             </div>
 
             <div className="rounded-lg bg-muted/50 p-4 space-y-2">
-              <h4 className="text-sm font-medium">수수료 안내</h4>
+              <h4 className="text-sm font-medium">{dict.agentRegister.commissionGuide}</h4>
               <ul className="space-y-1 text-xs text-muted-foreground">
-                <li>- 0~5%: 기본 노출</li>
-                <li>- 5~15%: 카테고리 상위 노출</li>
-                <li>- 15~30%: 추천 에이전트 자격</li>
-                <li>- 30~50%: 프리미엄 배치 + 마케팅 지원</li>
+                <li>- 0%: Standard listing (0% = keep all revenue)</li>
+                <li>- 0.25%: Improved visibility</li>
+                <li>- 0.5%: Category highlight</li>
+                <li>- 1%: Premium placement + priority exposure</li>
+                <li className="text-xs text-primary mt-2">We never charge a platform fee. This commission is your voluntary investment in search visibility.</li>
               </ul>
             </div>
           </CardContent>
@@ -388,7 +547,7 @@ export default function AgentRegisterPage() {
       {step === 4 && (
         <Card>
           <CardHeader>
-            <CardTitle>등록 정보 확인</CardTitle>
+            <CardTitle>{dict.agentRegister.reviewTitle}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {submitResult ? (
@@ -402,7 +561,7 @@ export default function AgentRegisterPage() {
                 <p className="font-medium">{submitResult.message}</p>
                 {submitResult.success && (
                   <Link href="/agents" className="mt-2 inline-block text-sm underline">
-                    에이전트 목록으로 이동
+                    {dict.agentRegister.goToList}
                   </Link>
                 )}
               </div>
@@ -410,24 +569,24 @@ export default function AgentRegisterPage() {
               <>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">이름</span>
+                    <span className="text-muted-foreground">Name</span>
                     <span className="font-medium">{form.name}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">카테고리</span>
-                    <span className="font-medium">{CATEGORY_LABELS[form.category] ?? form.category}</span>
+                    <span className="text-muted-foreground">Category</span>
+                    <span className="font-medium">{dict.categories[form.category as keyof typeof dict.categories] ?? form.category}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">수수료율</span>
+                    <span className="text-muted-foreground">Commission Rate</span>
                     <span className="font-medium">{form.commissionRate}%</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">서비스 수</span>
-                    <span className="font-medium">{form.services.filter((s) => s.name.trim()).length}개</span>
+                    <span className="text-muted-foreground">Services</span>
+                    <span className="font-medium">{form.services.filter((s) => s.name.trim()).length}</span>
                   </div>
                   {form.tags.length > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">태그</span>
+                      <span className="text-muted-foreground">Tags</span>
                       <div className="flex flex-wrap gap-1 justify-end">
                         {form.tags.map((tag) => (
                           <Badge key={tag} variant="outline" className="text-xs">
@@ -440,7 +599,7 @@ export default function AgentRegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium">등록 서비스</h4>
+                  <h4 className="text-sm font-medium">Registered Services</h4>
                   {form.services
                     .filter((s) => s.name.trim())
                     .map((s, i) => (
@@ -457,7 +616,7 @@ export default function AgentRegisterPage() {
                 </div>
 
                 <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-                  등록 후 관리자 검토를 거쳐 마켓플레이스에 게시됩니다. 검토에는 최대 24시간이 소요될 수 있습니다.
+                  After registration, it will be reviewed by admin and published on the marketplace. Review may take up to 24 hours.
                 </div>
               </>
             )}
@@ -470,22 +629,22 @@ export default function AgentRegisterPage() {
         <div>
           {step > 1 && !submitResult?.success && (
             <Button variant="outline" onClick={() => setStep(step - 1)}>
-              이전
+              Previous
             </Button>
           )}
         </div>
         <div className="flex gap-2">
           <Link href="/agents">
-            <Button variant="ghost">취소</Button>
+            <Button variant="ghost">{dict.common.cancel}</Button>
           </Link>
           {step < 4 ? (
             <Button onClick={() => setStep(step + 1)} disabled={!canProceed()}>
-              다음
+              Next
             </Button>
           ) : (
             !submitResult?.success && (
               <Button onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? '등록 중...' : '에이전트 등록'}
+                {isSubmitting ? dict.agentRegister.registering : dict.agentRegister.registerBtn}
               </Button>
             )
           )}
