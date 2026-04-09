@@ -4,6 +4,7 @@ import * as agentsRepo from '@/lib/db/repositories/agents';
 import * as rewardsRepo from '@/lib/db/repositories/rewards';
 import { lockEscrow } from '@/lib/payment/escrow';
 import { fulfillDynamically } from '@/lib/agents/dynamic-factory';
+import { buildAgent } from '@/lib/agents/agent-builder';
 import { query } from '@/lib/db/pool';
 import { z } from 'zod';
 import { apiJson, apiCatchError, requireAuth, AuthError, parsePagination } from '@/lib/utils/api-response';
@@ -77,6 +78,60 @@ export async function POST(request: NextRequest) {
     // Execute AI directly via Dynamic Factory (synchronous for fast response)
     try {
       await jobsRepo.updateJobStatus(jobId, 'processing');
+
+      // === AgentBuilder 분기 ===
+      if (agent.slug === 'agent-builder') {
+        const buildInput = {
+          title: typeof input_data?.title === 'string' ? input_data.title : 'Untitled',
+          description: typeof input_data?.description === 'string' ? input_data.description : JSON.stringify(input_data ?? {}),
+          source_urls: Array.isArray(input_data?.source_urls) ? input_data.source_urls as string[] : [],
+          attachments: Array.isArray(input_data?.attachments) ? input_data.attachments as { type: string; url: string; name: string }[] : [],
+          category: typeof input_data?.category === 'string' ? input_data.category : undefined,
+          urgency: typeof input_data?.urgency === 'string' ? input_data.urgency : undefined,
+        };
+
+        const buildResult = await buildAgent(buildInput);
+
+        await jobsRepo.updateJobStatus(jobId, 'completed', {
+          result_data: {
+            agent_spec: buildResult.spec,
+            created_agent_id: buildResult.agentId,
+            provider: buildResult.provider,
+            processingMs: buildResult.processingMs,
+          },
+        });
+
+        // Update AgentBuilder stats
+        await query(
+          `UPDATE agents SET total_jobs = total_jobs + 1, updated_at = NOW() WHERE id = $1`,
+          [agent_id],
+        );
+
+        // Rewards
+        try {
+          await rewardsRepo.processPurchaseCashback(userId, payment_amount, jobId);
+          await rewardsRepo.processReferralChain(userId, payment_amount, jobId);
+        } catch (rewardErr) {
+          console.error('Reward processing error:', rewardErr);
+        }
+
+        return apiJson({
+          data: {
+            id: jobId,
+            status: 'completed',
+            result: {
+              agent_name: buildResult.spec.agent_name,
+              agent_id: buildResult.agentId,
+              category: buildResult.spec.category,
+              services_count: buildResult.spec.services.length,
+              build_notes: buildResult.spec.build_notes,
+              provider: buildResult.provider,
+              processingMs: buildResult.processingMs,
+            },
+          },
+        }, 201);
+      }
+      // === AgentBuilder 분기 끝 ===
 
       const prompt = (typeof input_data?.prompt === 'string'
         ? input_data.prompt

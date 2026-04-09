@@ -21,8 +21,37 @@ const AGENT_DATA: Record<
     features: string[];
     services: { name: string; price: string; description: string }[];
     reviews: { user: string; rating: number; comment: string; date: string }[];
+    operationalStatus: 'active' | 'dev';
   }
 > = {
+  'agent-builder': {
+    name: 'AgentBuilder',
+    description: 'AI Agent that builds other AI agents. Provide source materials and get a working agent.',
+    longDescription:
+      'AgentBuilder analyzes GitHub repositories, documentation, articles, and descriptions to automatically create fully functional AI agents. Simply provide your source materials — GitHub URL, documentation links, or detailed descriptions — and AgentBuilder will generate a complete agent with system prompt, services, pricing, and marketplace registration.',
+    category: 'Automation',
+    avgRating: 5.0,
+    totalReviews: 0,
+    totalJobs: 0,
+    totalRevenue: '$0',
+    commissionRate: 0.5,
+    creator: 'OpenAgentX',
+    features: [
+      'GitHub repository analysis and understanding',
+      'Automatic system prompt generation',
+      'Multi-service configuration with pricing',
+      'Direct marketplace registration',
+      'Support for multiple source types (GitHub, docs, articles)',
+      'Korean & English bilingual output',
+    ],
+    services: [
+      { name: 'Basic Agent Build', price: '500P', description: 'Simple agent from description or small repo (< 50 files)' },
+      { name: 'Advanced Agent Build', price: '2,000P', description: 'Complex agent from large repos with multi-service setup' },
+      { name: 'Agent Chain Build', price: '5,000P', description: 'Interconnected agent chain with workflow orchestration' },
+    ],
+    reviews: [],
+    operationalStatus: 'active',
+  },
   'code-master': {
     name: 'CodeMaster',
     description: 'AI coding assistant supporting full-stack development, code review, bug fixing, and refactoring.',
@@ -52,6 +81,7 @@ const AGENT_DATA: Record<
       { user: 'L**', rating: 5, comment: 'Bug fixes are accurate and fast.', date: '2026-03-10' },
       { user: 'P**', rating: 4, comment: 'Refactoring suggestions are practical.', date: '2026-03-05' },
     ],
+    operationalStatus: 'dev',
   },
   'content-craft': {
     name: 'Content Craft',
@@ -81,6 +111,7 @@ const AGENT_DATA: Record<
       { user: 'J**', rating: 5, comment: 'SNS content quality is excellent.', date: '2026-03-12' },
       { user: 'C**', rating: 4, comment: 'Blog writing is fast and accurate.', date: '2026-03-08' },
     ],
+    operationalStatus: 'dev',
   },
   'crypto-analyzer': {
     name: 'Crypto Analyzer',
@@ -110,6 +141,7 @@ const AGENT_DATA: Record<
       { user: 'K**', rating: 5, comment: 'Signal accuracy is very high.', date: '2026-03-15' },
       { user: 'L**', rating: 4, comment: 'Analysis results are easy to understand.', date: '2026-03-10' },
     ],
+    operationalStatus: 'dev',
   },
 };
 
@@ -151,11 +183,21 @@ export default function AgentDetailPage() {
     );
   }
 
+  const statusLabels = {
+    active: (dict.common as Record<string, string>).statusActive ?? 'Active',
+    dev: (dict.common as Record<string, string>).statusDev ?? 'In Dev',
+  };
+
   return (
     <div className="mx-auto max-w-4xl space-y-10">
       {/* Agent Header */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">
+          {agent.operationalStatus === 'active' ? (
+            <Badge className="bg-green-500 hover:bg-green-600 text-white">{statusLabels.active}</Badge>
+          ) : (
+            <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">{statusLabels.dev}</Badge>
+          )}
           <Badge variant="secondary">{agent.category}</Badge>
           <span className="text-xs text-muted-foreground">By: {agent.creator}</span>
           <Badge variant="outline">Commission {agent.commissionRate}%</Badge>
@@ -200,9 +242,12 @@ export default function AgentDetailPage() {
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <span className="text-lg font-bold">{service.price}</span>
-                <button className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+                <Link
+                  href={`/checkout/${service.name.toLowerCase().replace(/\s+/g, '-')}`}
+                  className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
                   Purchase
-                </button>
+                </Link>
               </div>
             </div>
           ))}

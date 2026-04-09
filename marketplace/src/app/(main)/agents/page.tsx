@@ -45,7 +45,25 @@ function AgentsContent() {
     { value: 'created_at', label: t.sortNewest },
   ] as const;
 
+  const ab = (dict as unknown as Record<string, Record<string, string>>).agentBuilder;
+  const statusLabels = {
+    active: (dict.common as Record<string, string>).statusActive ?? 'Active',
+    dev: (dict.common as Record<string, string>).statusDev ?? 'In Dev',
+  };
+
   const MOCK_AGENTS = [
+    {
+      id: 'agent-builder',
+      name: 'AgentBuilder',
+      description: ab?.description ?? 'AI Agent that builds other AI agents',
+      category: 'automation',
+      avgRating: 5.0,
+      totalJobs: 0,
+      commissionRate: 0.5,
+      priceRange: '$5',
+      tags: ['AgentBuilder', 'AI', 'GitHub'],
+      operationalStatus: 'active' as const,
+    },
     {
       id: 'code-master',
       name: t.codeMaster,
@@ -56,6 +74,7 @@ function AgentsContent() {
       commissionRate: 0.5,
       priceRange: '$5',
       tags: [dict.categories.coding, 'Full-stack', 'Code Review'],
+      operationalStatus: 'dev' as const,
     },
     {
       id: 'content-craft',
@@ -67,6 +86,7 @@ function AgentsContent() {
       commissionRate: 0.75,
       priceRange: '$3',
       tags: [dict.categories.content_creation, 'Copywriting', 'SNS'],
+      operationalStatus: 'dev' as const,
     },
     {
       id: 'data-insight',
@@ -78,6 +98,7 @@ function AgentsContent() {
       commissionRate: 1,
       priceRange: '$10',
       tags: [dict.categories.data_analysis, 'Visualization', 'Statistics'],
+      operationalStatus: 'dev' as const,
     },
     {
       id: 'crypto-analyzer',
@@ -89,6 +110,7 @@ function AgentsContent() {
       commissionRate: 0.5,
       priceRange: '$5',
       tags: [dict.categories.crypto, 'Market Analysis', 'On-chain'],
+      operationalStatus: 'dev' as const,
     },
     {
       id: 'translingua',
@@ -100,6 +122,7 @@ function AgentsContent() {
       commissionRate: 0.25,
       priceRange: '$2',
       tags: [dict.categories.translation, 'Multilingual'],
+      operationalStatus: 'dev' as const,
     },
     {
       id: 'seo-booster',
@@ -111,6 +134,7 @@ function AgentsContent() {
       commissionRate: 0.75,
       priceRange: '$8',
       tags: ['SEO', dict.categories.marketing],
+      operationalStatus: 'dev' as const,
     },
     {
       id: 'auto-flow',
@@ -122,6 +146,7 @@ function AgentsContent() {
       commissionRate: 0.5,
       priceRange: '$15',
       tags: [dict.categories.automation, 'RPA'],
+      operationalStatus: 'dev' as const,
     },
     {
       id: 'finance-guru',
@@ -133,6 +158,7 @@ function AgentsContent() {
       commissionRate: 1,
       priceRange: '$10',
       tags: [dict.categories.finance, 'Portfolio'],
+      operationalStatus: 'dev' as const,
     },
   ];
 
@@ -184,6 +210,13 @@ function AgentsContent() {
         agents.sort((a, b) => score(b) - score(a));
       }
     }
+
+    // Always show active (working) agents first, regardless of sort
+    agents.sort((a, b) => {
+      if (a.operationalStatus === 'active' && b.operationalStatus !== 'active') return -1;
+      if (a.operationalStatus !== 'active' && b.operationalStatus === 'active') return 1;
+      return 0;
+    });
 
     return agents;
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -318,6 +351,8 @@ function AgentsContent() {
                     tags={agent.tags}
                     completedLabel={t.completed.replace('{count}', String(agent.totalJobs))}
                     commissionLabel={t.commission.replace('{rate}', String(agent.commissionRate))}
+                    operationalStatus={agent.operationalStatus}
+                    operationalLabel={statusLabels[agent.operationalStatus]}
                   />
                 );
               })}

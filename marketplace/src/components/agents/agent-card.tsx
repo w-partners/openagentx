@@ -17,18 +17,32 @@ interface AgentCardProps {
   completedLabel?: string;
   commissionLabel?: string;
   showCommission?: boolean;
+  /** Operational status: 'active' = working agent, 'dev' = in development */
+  operationalStatus?: 'active' | 'dev';
+  operationalLabel?: string;
 }
 
 export function AgentCard({
   id, name, description, category, avgRating, totalJobs, commissionRate, priceRange, priceRangePoints, tags,
-  completedLabel, commissionLabel, showCommission,
+  completedLabel, commissionLabel, showCommission, operationalStatus, operationalLabel,
 }: AgentCardProps) {
   return (
     <Link href={`/agents/${id}`}>
       <Card className="h-full transition-shadow hover:shadow-md cursor-pointer">
         <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <CardTitle className="text-lg leading-tight">{name}</CardTitle>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <CardTitle className="text-lg leading-tight truncate">{name}</CardTitle>
+              {operationalStatus === 'active' ? (
+                <Badge className="shrink-0 bg-green-500 hover:bg-green-600 text-white text-[10px] px-1.5 py-0">
+                  {operationalLabel ?? 'Active'}
+                </Badge>
+              ) : (
+                <Badge className="shrink-0 bg-yellow-500 hover:bg-yellow-600 text-white text-[10px] px-1.5 py-0">
+                  {operationalLabel ?? 'Dev'}
+                </Badge>
+              )}
+            </div>
             <Badge variant="secondary" className="text-xs shrink-0">{category}</Badge>
           </div>
         </CardHeader>

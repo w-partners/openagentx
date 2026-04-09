@@ -37,48 +37,63 @@ export function Header({ dict, locale, isLoggedIn, userRole, enabledPages = [] }
   return (
     <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-        <Link href={prefix} className="text-xl font-bold">
+        <Link href={prefix} className="text-xl font-bold shrink-0">
           OpenAgentX
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex">
+        <nav className="hidden items-center gap-4 md:flex overflow-x-auto whitespace-nowrap scrollbar-hide">
           {showPage('agents') && (
-            <Link href={`${prefix}/agents`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href={`${prefix}/agents`} className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0">
               {dict.common.agents}
             </Link>
           )}
+          {showPage('request-agent') && (
+            <Link href={`${prefix}/request-agent`} className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0">
+              {(dict.common as Record<string, string>).requestAgent ?? 'Build Request'}
+            </Link>
+          )}
           {showPage('bounties') && (
-            <Link href={`${prefix}/bounties`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href={`${prefix}/bounties`} className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0">
               {dict.common.bounties}
             </Link>
           )}
           {showPage('auctions') && (
-            <Link href={`${prefix}/auctions`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href={`${prefix}/auctions`} className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0">
               {(dict.common as Record<string, string>).auctions ?? 'Auctions'}
             </Link>
           )}
           {showPage('matching') && (
-            <Link href={`${prefix}/matching`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href={`${prefix}/matching`} className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0">
               {(dict.common as Record<string, string>).matching ?? 'Live Matching'}
             </Link>
           )}
           {showPage('chains') && (
-            <Link href={`${prefix}/chains`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href={`${prefix}/chains`} className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0">
               {(dict.common as Record<string, string>).chains ?? 'Chains'}
             </Link>
           )}
           {showPage('guide') && (
-            <Link href={`${prefix}/guide`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href={`${prefix}/guide`} className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0">
               {(dict.common as Record<string, string>).guide ?? 'Guide'}
             </Link>
           )}
+          {showPage('charge') && (
+            <Link href={`${prefix}/charge`} className="text-sm font-medium text-primary hover:text-primary/80 transition-colors whitespace-nowrap shrink-0">
+              {((dict as unknown as Record<string, Record<string, string>>).charge?.title) ?? 'Charge'}
+            </Link>
+          )}
+          {showPage('orders') && isLoggedIn && (
+            <Link href={`${prefix}/orders`} className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0">
+              {((dict as unknown as Record<string, Record<string, string>>).orders?.title) ?? 'Orders'}
+            </Link>
+          )}
           {showPage('dashboard') && (
-            <Link href={`${prefix}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href={`${prefix}/dashboard`} className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0">
               {dict.common.dashboard}
             </Link>
           )}
           {isAdmin && (
-            <Link href={`${prefix}/dashboard/admin`} className="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium transition-colors">
+            <Link href={`${prefix}/dashboard/admin`} className="text-sm text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium transition-colors whitespace-nowrap shrink-0">
               {(dict.common as Record<string, string>).admin ?? 'Admin'}
             </Link>
           )}
@@ -89,8 +104,15 @@ export function Header({ dict, locale, isLoggedIn, userRole, enabledPages = [] }
           <LanguageSwitcher />
           {isLoggedIn ? (
             <>
-              <Link href={`${prefix}/dashboard`}>
-                <Button variant="ghost" size="sm">{dict.common.dashboard}</Button>
+              <Link href={`${prefix}/charge`}>
+                <Button variant="default" size="sm">
+                  {((dict as unknown as Record<string, Record<string, string>>).charge?.title) ?? 'Charge'}
+                </Button>
+              </Link>
+              <Link href={`${prefix}/orders`}>
+                <Button variant="ghost" size="sm">
+                  {((dict as unknown as Record<string, Record<string, string>>).orders?.title) ?? 'Orders'}
+                </Button>
               </Link>
               <Link href={`${prefix}/profile`}>
                 <Button variant="ghost" size="sm">
@@ -144,6 +166,11 @@ export function Header({ dict, locale, isLoggedIn, userRole, enabledPages = [] }
                 {dict.common.agents}
               </Link>
             )}
+            {showPage('request-agent') && (
+              <Link href={`${prefix}/request-agent`} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors" onClick={() => setIsMenuOpen(false)}>
+                {(dict.common as Record<string, string>).requestAgent ?? 'Build Request'}
+              </Link>
+            )}
             {showPage('bounties') && (
               <Link href={`${prefix}/bounties`} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors" onClick={() => setIsMenuOpen(false)}>
                 {dict.common.bounties}
@@ -169,6 +196,16 @@ export function Header({ dict, locale, isLoggedIn, userRole, enabledPages = [] }
                 {(dict.common as Record<string, string>).guide ?? 'Guide'}
               </Link>
             )}
+            {showPage('charge') && (
+              <Link href={`${prefix}/charge`} className="rounded-md px-3 py-2 text-sm font-medium text-primary hover:bg-accent transition-colors" onClick={() => setIsMenuOpen(false)}>
+                {((dict as unknown as Record<string, Record<string, string>>).charge?.title) ?? 'Charge'}
+              </Link>
+            )}
+            {showPage('orders') && isLoggedIn && (
+              <Link href={`${prefix}/orders`} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors" onClick={() => setIsMenuOpen(false)}>
+                {((dict as unknown as Record<string, Record<string, string>>).orders?.title) ?? 'Orders'}
+              </Link>
+            )}
             {showPage('dashboard') && (
               <Link href={`${prefix}/dashboard`} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors" onClick={() => setIsMenuOpen(false)}>
                 {dict.common.dashboard}
@@ -191,6 +228,15 @@ export function Header({ dict, locale, isLoggedIn, userRole, enabledPages = [] }
 
             {isLoggedIn ? (
               <div className="flex flex-col gap-1">
+                <Link href={`${prefix}/charge`} className="rounded-md px-3 py-2 text-sm font-medium text-primary hover:bg-accent transition-colors" onClick={() => setIsMenuOpen(false)}>
+                  {((dict as unknown as Record<string, Record<string, string>>).charge?.title) ?? 'Charge'}
+                </Link>
+                <Link href={`${prefix}/orders`} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors" onClick={() => setIsMenuOpen(false)}>
+                  {((dict as unknown as Record<string, Record<string, string>>).orders?.title) ?? 'Orders'}
+                </Link>
+                <Link href={`${prefix}/withdraw`} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors" onClick={() => setIsMenuOpen(false)}>
+                  {((dict as unknown as Record<string, Record<string, string>>).withdraw?.title) ?? 'Withdraw'}
+                </Link>
                 <Link href={`${prefix}/dashboard`} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors" onClick={() => setIsMenuOpen(false)}>
                   {dict.common.dashboard}
                 </Link>

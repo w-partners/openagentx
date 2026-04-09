@@ -87,7 +87,12 @@ export default function ChainsPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">{dict.chainsPage.title}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold">{dict.chainsPage.title}</h1>
+            <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">
+              {(dict.common as Record<string, string>).statusDev ?? 'In Dev'}
+            </Badge>
+          </div>
           <p className="text-muted-foreground">
             {dict.chainsPage.description}
           </p>

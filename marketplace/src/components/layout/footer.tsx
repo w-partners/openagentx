@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Dictionary } from '@/i18n/config';
 
 interface FooterProps {
@@ -20,10 +21,16 @@ export function Footer({ dict, version }: FooterProps) {
             </span>
           </div>
           <div className="flex gap-4 text-sm text-muted-foreground">
-            <a href="#" className="hover:text-foreground transition-colors">{dict.footer.terms}</a>
-            <a href="#" className="hover:text-foreground transition-colors">{dict.footer.privacy}</a>
-            <a href="#" className="hover:text-foreground transition-colors">{dict.footer.contact}</a>
+            <Link href="/terms" className="hover:text-foreground transition-colors">{dict.footer.terms}</Link>
+            <Link href="/privacy" className="hover:text-foreground transition-colors">{dict.footer.privacy}</Link>
+            <Link href="/refund" className="hover:text-foreground transition-colors">{dict.footer.refund}</Link>
+            <a href="mailto:contact@openagentx.org" className="hover:text-foreground transition-colors">{dict.footer.contact}</a>
           </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-border/50">
+          <p className="text-xs text-muted-foreground/70 text-center">
+            {dict.footer.businessInfo}
+          </p>
         </div>
       </div>
     </footer>
