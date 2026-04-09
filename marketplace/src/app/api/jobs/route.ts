@@ -5,6 +5,7 @@ import * as rewardsRepo from '@/lib/db/repositories/rewards';
 import { lockEscrow } from '@/lib/payment/escrow';
 import { fulfillDynamically } from '@/lib/agents/dynamic-factory';
 import { buildAgent } from '@/lib/agents/agent-builder';
+import { runACPHelper } from '@/lib/agents/acp-helper';
 import { query } from '@/lib/db/pool';
 import { z } from 'zod';
 import { apiJson, apiCatchError, requireAuth, AuthError, parsePagination } from '@/lib/utils/api-response';
@@ -132,6 +133,55 @@ export async function POST(request: NextRequest) {
         }, 201);
       }
       // === AgentBuilder 분기 끝 ===
+
+      // === ACPHelper 분기 ===
+      if (agent.slug === 'acp-helper') {
+        const helperInput = {
+          title: typeof input_data?.title === 'string' ? input_data.title : 'Untitled',
+          description: typeof input_data?.description === 'string' ? input_data.description : JSON.stringify(input_data ?? {}),
+          source_urls: Array.isArray(input_data?.source_urls) ? input_data.source_urls as string[] : [],
+          product_data: typeof input_data?.product_data === 'string' ? input_data.product_data : undefined,
+          service_type: (input_data?.service_type as 'feed' | 'full' | 'enterprise') ?? 'feed',
+        };
+
+        const helperResult = await runACPHelper(helperInput);
+
+        await jobsRepo.updateJobStatus(jobId, 'completed', {
+          result_data: {
+            ...helperResult.result,
+            provider: helperResult.provider,
+            processingMs: helperResult.processingMs,
+          },
+        });
+
+        await query(
+          `UPDATE agents SET total_jobs = total_jobs + 1, updated_at = NOW() WHERE id = $1`,
+          [agent_id],
+        );
+
+        try {
+          await rewardsRepo.processPurchaseCashback(userId, payment_amount, jobId);
+          await rewardsRepo.processReferralChain(userId, payment_amount, jobId);
+        } catch (rewardErr) {
+          console.error('Reward processing error:', rewardErr);
+        }
+
+        return apiJson({
+          data: {
+            id: jobId,
+            status: 'completed',
+            result: {
+              has_product_feed: !!helperResult.result.product_feed,
+              has_checkout_code: !!helperResult.result.checkout_code,
+              has_setup_guide: !!helperResult.result.setup_guide,
+              validation: helperResult.result.validation_results,
+              provider: helperResult.provider,
+              processingMs: helperResult.processingMs,
+            },
+          },
+        }, 201);
+      }
+      // === ACPHelper 분기 끝 ===
 
       const prompt = (typeof input_data?.prompt === 'string'
         ? input_data.prompt

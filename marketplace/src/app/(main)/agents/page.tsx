@@ -65,6 +65,18 @@ function AgentsContent() {
       operationalStatus: 'active' as const,
     },
     {
+      id: 'acp-helper',
+      name: 'ACPHelper',
+      description: ab?.description ?? 'ChatGPT commerce setup assistant',
+      category: 'automation',
+      avgRating: 5.0,
+      totalJobs: 0,
+      commissionRate: 0.5,
+      priceRange: '$5',
+      tags: ['ACP', 'ChatGPT', 'Stripe'],
+      operationalStatus: 'active' as const,
+    },
+    {
       id: 'code-master',
       name: t.codeMaster,
       description: t.codeMasterDesc,
