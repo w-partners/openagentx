@@ -1,9 +1,74 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
 
 const SUPPORTED_LOCALES = ['en', 'ko', 'ja', 'zh', 'es', 'fr'] as const;
 type Locale = (typeof SUPPORTED_LOCALES)[number];
 const DEFAULT_LOCALE: Locale = 'en';
 const LOCALE_COOKIE = 'NEXT_LOCALE';
+
+/**
+ * Strip the leading locale segment (if present) from a pathname.
+ * e.g. /en/dashboard/admin -> /dashboard/admin
+ */
+function stripLocalePrefix(pathname: string): string {
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments[0] && (SUPPORTED_LOCALES as readonly string[]).includes(segments[0])) {
+    return '/' + segments.slice(1).join('/');
+  }
+  return pathname;
+}
+
+/**
+ * Lightweight JWT role check for Edge middleware.
+ * Returns the user's role or null if token is missing/invalid.
+ */
+async function getUserRoleFromCookie(request: NextRequest): Promise<string | null> {
+  const token = request.cookies.get('access_token')?.value;
+  if (!token) return null;
+  try {
+    const secret = new TextEncoder().encode(
+      process.env.NEXTAUTH_SECRET || process.env.JWT_SECRET || '',
+    );
+    if (secret.length === 0) return null;
+    const { payload } = await jwtVerify(token, secret);
+    return typeof payload.role === 'string' ? payload.role : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Admin gate: returns a redirect/403 response if the user is not an admin,
+ * or null if the request may proceed.
+ */
+async function guardAdminRoute(
+  request: NextRequest,
+  pathname: string,
+  locale: Locale,
+): Promise<NextResponse | null> {
+  const stripped = stripLocalePrefix(pathname);
+  if (!stripped.startsWith('/dashboard/admin')) return null;
+
+  const role = await getUserRoleFromCookie(request);
+
+  if (role === null) {
+    // Not logged in -> /login?next=<original path>
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/login`;
+    url.search = `?next=${encodeURIComponent(pathname)}`;
+    return NextResponse.redirect(url);
+  }
+
+  if (role !== 'admin') {
+    // Logged in but not admin -> /dashboard
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/dashboard`;
+    url.search = '';
+    return NextResponse.redirect(url);
+  }
+
+  return null;
+}
 
 function isLocale(value: string): value is Locale {
   return (SUPPORTED_LOCALES as readonly string[]).includes(value);
@@ -34,7 +99,7 @@ function detectLocaleFromHeader(acceptLanguage: string | null): Locale {
 }
 
 /** Paths that should never be locale-prefixed */
-const IGNORED_PREFIXES = ['/api/', '/_next/', '/favicon.ico', '/.well-known/', '/chat'];
+const IGNORED_PREFIXES = ['/api/', '/_next/', '/favicon.ico', '/.well-known/', '/chat', '/oauth/'];
 
 function shouldIgnore(pathname: string): boolean {
   return IGNORED_PREFIXES.some((p) => pathname.startsWith(p));
@@ -108,6 +173,10 @@ export async function middleware(request: NextRequest) {
       });
       return response;
     }
+
+    // Admin route guard (before rewrite)
+    const adminBlock = await guardAdminRoute(request, pathname, pathLocale);
+    if (adminBlock) return adminBlock;
 
     const strippedPath = '/' + pathname.split('/').filter(Boolean).slice(1).join('/') || '/';
     const url = request.nextUrl.clone();
