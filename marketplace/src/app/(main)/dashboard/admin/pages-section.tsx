@@ -237,7 +237,7 @@ export default function PagesSection() {
                     <select
                       value={config.accessLevel}
                       onChange={(e) => updateConfig(page, 'accessLevel', e.target.value)}
-                      className="w-full px-3 py-1.5 text-sm border rounded-md bg-background"
+                      className="w-full px-3 py-1.5 text-sm border rounded-md bg-white dark:bg-zinc-900 text-foreground [&>option]:bg-white dark:[&>option]:bg-zinc-900 [&>option]:text-foreground"
                     >
                       {ACCESS_LEVELS.map((level) => (
                         <option key={level} value={level}>
@@ -303,7 +303,7 @@ export default function PagesSection() {
                               <select
                                 value={String(config[field.key] ?? '')}
                                 onChange={(e) => updateConfig(page, field.key, e.target.value)}
-                                className="w-full px-3 py-1.5 text-sm border rounded-md bg-background"
+                                className="w-full px-3 py-1.5 text-sm border rounded-md bg-white dark:bg-zinc-900 text-foreground [&>option]:bg-white dark:[&>option]:bg-zinc-900 [&>option]:text-foreground"
                               >
                                 {field.options?.map((opt) => (
                                   <option key={opt} value={opt}>{opt}</option>

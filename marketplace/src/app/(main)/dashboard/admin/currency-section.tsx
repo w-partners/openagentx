@@ -139,7 +139,7 @@ export default function CurrencySection() {
       <Card>
         <CardHeader><CardTitle className="text-lg">{ct.defaultCurrency ?? 'Default Display Currency'}</CardTitle></CardHeader>
         <CardContent>
-          <select value={config.defaultCurrency} onChange={(e) => setConfig((prev) => ({ ...prev, defaultCurrency: e.target.value as Currency }))} className="rounded-md border px-3 py-2 text-sm bg-background">
+          <select value={config.defaultCurrency} onChange={(e) => setConfig((prev) => ({ ...prev, defaultCurrency: e.target.value as Currency }))} className="rounded-md border px-3 py-2 text-sm bg-white dark:bg-zinc-900 text-foreground [&>option]:bg-white dark:[&>option]:bg-zinc-900 [&>option]:text-foreground">
             {config.availableCurrencies.map((c) => (<option key={c} value={c}>{CURRENCY_SYMBOLS[c]} {c}</option>))}
           </select>
         </CardContent>
@@ -152,7 +152,7 @@ export default function CurrencySection() {
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <label className="text-sm font-medium">{ct.autoRefresh ?? 'Auto Refresh Interval'}</label>
-              <select value={config.autoRefreshInterval} onChange={(e) => setConfig((prev) => ({ ...prev, autoRefreshInterval: parseInt(e.target.value, 10) }))} className="rounded-md border px-3 py-2 text-sm bg-background">
+              <select value={config.autoRefreshInterval} onChange={(e) => setConfig((prev) => ({ ...prev, autoRefreshInterval: parseInt(e.target.value, 10) }))} className="rounded-md border px-3 py-2 text-sm bg-white dark:bg-zinc-900 text-foreground [&>option]:bg-white dark:[&>option]:bg-zinc-900 [&>option]:text-foreground">
                 {REFRESH_OPTIONS.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label} {ct.hours ?? 'hours'}</option>))}
               </select>
             </div>
@@ -210,7 +210,7 @@ export default function CurrencySection() {
             {Object.entries(LANGUAGE_LABELS).map(([lang, label]) => (
               <div key={lang} className="flex items-center gap-3">
                 <span className="text-sm font-medium w-28">{label} ({lang})</span>
-                <select value={config.languageCurrencyMap?.[lang] ?? 'USD'} onChange={(e) => setConfig((prev) => ({ ...prev, languageCurrencyMap: { ...prev.languageCurrencyMap, [lang]: e.target.value } }))} className="rounded-md border px-3 py-2 text-sm bg-background">
+                <select value={config.languageCurrencyMap?.[lang] ?? 'USD'} onChange={(e) => setConfig((prev) => ({ ...prev, languageCurrencyMap: { ...prev.languageCurrencyMap, [lang]: e.target.value } }))} className="rounded-md border px-3 py-2 text-sm bg-white dark:bg-zinc-900 text-foreground [&>option]:bg-white dark:[&>option]:bg-zinc-900 [&>option]:text-foreground">
                   {ALL_CURRENCIES.map((c) => (<option key={c} value={c}>{CURRENCY_SYMBOLS[c]} {c}</option>))}
                 </select>
               </div>

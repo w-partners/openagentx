@@ -204,7 +204,7 @@ function AgentBoostSection({ dict }: { dict: ReturnType<typeof useDict> }) {
                 <select
                   value={Number(agent.boost_multiplier).toFixed(1)}
                   onChange={(e) => updateBoost(agent.id, parseFloat(e.target.value))}
-                  className="h-7 rounded border px-1 text-xs bg-background"
+                  className="h-7 rounded border px-1 text-xs bg-white dark:bg-zinc-900 text-foreground [&>option]:bg-white dark:[&>option]:bg-zinc-900 [&>option]:text-foreground"
                 >
                   {[1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0].map((v) => (
                     <option key={v} value={v.toFixed(1)}>{v.toFixed(1)}x</option>
@@ -283,7 +283,7 @@ function NewAgentBoostSection({ dict }: { dict: ReturnType<typeof useDict> }) {
           <select
             value={config.multiplier.toFixed(1)}
             onChange={(e) => { setConfig((p) => ({ ...p, multiplier: parseFloat(e.target.value) })); setSaved(false); }}
-            className="w-24 rounded border px-2 py-1 text-sm bg-background"
+            className="w-24 rounded border px-2 py-1 text-sm bg-white dark:bg-zinc-900 text-foreground [&>option]:bg-white dark:[&>option]:bg-zinc-900 [&>option]:text-foreground"
           >
             {[1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0].map((v) => (
               <option key={v} value={v.toFixed(1)}>{v.toFixed(1)}x</option>
