@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useDict } from '@/i18n/client';
 import { useParams } from 'next/navigation';
+import AgentComments from '@/components/agents/agent-comments';
 
 const AGENT_DATA: Record<
   string,
@@ -316,6 +317,9 @@ export default function AgentDetailPage() {
           ))}
         </div>
       </div>
+
+      {/* Discussion — real comment threads tied to the agent */}
+      <AgentComments agentId={id} />
 
       {/* Action Buttons */}
       <div className="flex gap-4 pb-8">

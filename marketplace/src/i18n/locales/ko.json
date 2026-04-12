@@ -1561,5 +1561,67 @@
     "noBuildHistory": "아직 빌드 히스토리가 없습니다",
     "loginRequired": "에이전트를 생성하려면 로그인이 필요합니다",
     "insufficientBalance": "잔액이 부족합니다. 충전 후 다시 시도해주세요"
+  },
+  "feedback": {
+    "title": "피드백",
+    "description": "아이디어를 제안하거나 버그를 신고해주세요",
+    "newButton": "새 피드백 작성",
+    "newTitle": "피드백 작성",
+    "newDesc": "팀에게 의견을 전달해주세요",
+    "categoryLabel": "카테고리",
+    "statusLabel": "상태",
+    "sortLabel": "정렬",
+    "sortVotes": "추천순",
+    "sortRecent": "최신순",
+    "all": "전체",
+    "titleLabel": "제목",
+    "titlePlaceholder": "피드백을 한 줄로 요약하세요",
+    "bodyLabel": "내용",
+    "bodyPlaceholder": "자세한 내용을 적어주세요...",
+    "submit": "등록",
+    "submitting": "등록 중...",
+    "cancel": "취소",
+    "validation": "제목과 내용을 모두 입력해주세요",
+    "loading": "불러오는 중...",
+    "empty": "아직 등록된 피드백이 없습니다. 가장 먼저 의견을 남겨보세요!",
+    "loginRequired": "로그인이 필요합니다",
+    "loginRequiredDesc": "피드백을 작성하려면 로그인해주세요.",
+    "loginCta": "로그인하러 가기",
+    "notFound": "피드백을 찾을 수 없습니다",
+    "backToList": "목록으로",
+    "adminResponse": "관리자 답변",
+    "upvote": "추천",
+    "category": {
+      "feature": "기능 요청",
+      "bug": "버그",
+      "improvement": "개선",
+      "general": "일반"
+    },
+    "status": {
+      "open": "대기",
+      "in_progress": "진행 중",
+      "resolved": "완료",
+      "closed": "닫힘"
+    }
+  },
+  "comments": {
+    "count": "댓글",
+    "submit": "등록",
+    "submitting": "등록 중...",
+    "placeholder": "질문하거나 의견을 남겨보세요...",
+    "loading": "불러오는 중...",
+    "empty": "아직 댓글이 없습니다. 가장 먼저 의견을 남겨보세요!",
+    "reply": "답글",
+    "submitReply": "답글 등록",
+    "replyPlaceholder": "답글을 작성하세요...",
+    "cancel": "취소",
+    "delete": "삭제",
+    "deleted": "삭제됨",
+    "deleteConfirm": "이 댓글을 삭제할까요?",
+    "loginToComment": "로그인",
+    "loginHint": "하면 토론에 참여할 수 있습니다."
+  },
+  "discussion": {
+    "title": "토론"
   }
 }

@@ -1561,5 +1561,67 @@
     "noBuildHistory": "Aucun historique de construction",
     "loginRequired": "Connexion requise pour construire des agents",
     "insufficientBalance": "Solde insuffisant. Rechargez et réessayez"
+  },
+  "feedback": {
+    "title": "Feedback",
+    "description": "Share your ideas and report issues",
+    "newButton": "New Feedback",
+    "newTitle": "Submit Feedback",
+    "newDesc": "Share your thoughts with the team",
+    "categoryLabel": "Category",
+    "statusLabel": "Status",
+    "sortLabel": "Sort",
+    "sortVotes": "Top Voted",
+    "sortRecent": "Recent",
+    "all": "All",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Brief summary of your feedback",
+    "bodyLabel": "Details",
+    "bodyPlaceholder": "Describe in detail...",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "cancel": "Cancel",
+    "validation": "Title and body are required",
+    "loading": "Loading...",
+    "empty": "No feedback yet. Be the first to share!",
+    "loginRequired": "Login required",
+    "loginRequiredDesc": "Please sign in to submit feedback.",
+    "loginCta": "Go to Login",
+    "notFound": "Feedback not found",
+    "backToList": "Back to list",
+    "adminResponse": "Admin Response",
+    "upvote": "Upvote",
+    "category": {
+      "feature": "Feature Request",
+      "bug": "Bug",
+      "improvement": "Improvement",
+      "general": "General"
+    },
+    "status": {
+      "open": "Open",
+      "in_progress": "In Progress",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    }
+  },
+  "comments": {
+    "count": "comments",
+    "submit": "Post",
+    "submitting": "Posting...",
+    "placeholder": "Ask a question or share your thoughts...",
+    "loading": "Loading...",
+    "empty": "No comments yet. Be the first to discuss!",
+    "reply": "Reply",
+    "submitReply": "Reply",
+    "replyPlaceholder": "Write a reply...",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleted": "deleted",
+    "deleteConfirm": "Delete this comment?",
+    "loginToComment": "Log in",
+    "loginHint": "to join the discussion."
+  },
+  "discussion": {
+    "title": "Discussion"
   }
 }
