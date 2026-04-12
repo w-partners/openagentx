@@ -3,10 +3,12 @@ import {
   registerUser,
   loginWithEmail,
   loginWithWallet,
+  loginWithGoogle,
   generateNonce,
   registerSchema,
   loginSchema,
   walletLoginSchema,
+  googleLoginSchema,
 } from '@/lib/auth/config';
 import { createAccessToken, createRefreshToken, verifyToken, rotateRefreshToken, blacklistToken } from '@/lib/auth/jwt';
 import { query } from '@/lib/db/pool';
@@ -119,6 +121,50 @@ export async function POST(request: NextRequest) {
         const refreshToken = await createRefreshToken(user);
 
         const response = apiJson({ data: { user, accessToken } });
+        return setAuthCookies(response, accessToken, refreshToken);
+      } catch (err) {
+        return apiCatchError(err, 401);
+      }
+    }
+
+    case 'google-login': {
+      const parsed = googleLoginSchema.safeParse(body);
+      if (!parsed.success) {
+        return apiJson({ error: parsed.error.issues[0].message }, 400);
+      }
+      try {
+        // Verify Google ID token
+        const tokenRes = await fetch(
+          `https://oauth2.googleapis.com/tokeninfo?id_token=${parsed.data.credential}`,
+        );
+        if (!tokenRes.ok) {
+          return apiJson({ error: 'Google 토큰 검증에 실패했습니다' }, 401);
+        }
+        const tokenInfo = await tokenRes.json();
+
+        // Verify audience matches our client ID
+        if (process.env.GOOGLE_CLIENT_ID && tokenInfo.aud !== process.env.GOOGLE_CLIENT_ID) {
+          return apiJson({ error: 'Google 토큰의 대상이 올바르지 않습니다' }, 401);
+        }
+
+        if (!tokenInfo.email) {
+          return apiJson({ error: 'Google 계정에 이메일이 없습니다' }, 400);
+        }
+
+        const user = await loginWithGoogle({
+          email: tokenInfo.email,
+          name: tokenInfo.name || tokenInfo.email.split('@')[0],
+          googleId: tokenInfo.sub,
+          avatarUrl: tokenInfo.picture,
+        });
+
+        // Process signup bonus for new users (idempotent — won't double-grant)
+        const bonusAmount = await processSignupBonus(user.id).catch(() => 0);
+
+        const accessToken = await createAccessToken(user);
+        const refreshToken = await createRefreshToken(user);
+
+        const response = apiJson({ data: { user, accessToken, signupBonus: bonusAmount } });
         return setAuthCookies(response, accessToken, refreshToken);
       } catch (err) {
         return apiCatchError(err, 401);

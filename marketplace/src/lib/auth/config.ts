@@ -147,6 +147,68 @@ export async function loginWithWallet(input: z.infer<typeof walletLoginSchema>):
   };
 }
 
+// --- Google Login ---
+
+export const googleLoginSchema = z.object({
+  credential: z.string().min(1),
+});
+
+export async function loginWithGoogle(input: {
+  email: string;
+  name: string;
+  googleId: string;
+  avatarUrl?: string;
+}): Promise<UserPayload> {
+  const { email, name, googleId, avatarUrl } = input;
+
+  // Find existing user by email
+  let result = await query<{
+    id: string;
+    email: string | null;
+    nickname: string;
+    role: string;
+    wallet_address: string | null;
+    avatar_url: string | null;
+  }>('SELECT id, email, nickname, role, wallet_address, avatar_url FROM users WHERE email = $1', [
+    email,
+  ]);
+
+  if (result.rows.length > 0) {
+    const user = result.rows[0];
+
+    // Update avatar if not set
+    if (!user.avatar_url && avatarUrl) {
+      await query('UPDATE users SET avatar_url = $1 WHERE id = $2', [avatarUrl, user.id]);
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      nickname: user.nickname,
+      role: user.role,
+      walletAddress: user.wallet_address,
+    };
+  }
+
+  // Create new user
+  const nickname = name || email.split('@')[0];
+  result = await query(
+    `INSERT INTO users (email, nickname, role, is_verified, avatar_url, google_id)
+     VALUES ($1, $2, 'buyer', TRUE, $3, $4)
+     RETURNING id, email, nickname, role, wallet_address, avatar_url`,
+    [email, nickname, avatarUrl || null, googleId],
+  );
+
+  const newUser = result.rows[0];
+  return {
+    id: newUser.id,
+    email: newUser.email,
+    nickname: newUser.nickname,
+    role: newUser.role,
+    walletAddress: newUser.wallet_address,
+  };
+}
+
 // --- Token Management ---
 
 export { ACCESS_TOKEN_EXPIRY, REFRESH_TOKEN_EXPIRY };

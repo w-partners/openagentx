@@ -22,6 +22,9 @@ const PUBLIC_PATHS = [
   '/api/concierge',
   '/api/mcp',
   '/api/chat',
+  '/api/v1',
+  '/api/oauth',
+  '/oauth',
   '/.well-known',
 ];
 
