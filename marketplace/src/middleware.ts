@@ -6,10 +6,6 @@ type Locale = (typeof SUPPORTED_LOCALES)[number];
 const DEFAULT_LOCALE: Locale = 'en';
 const LOCALE_COOKIE = 'NEXT_LOCALE';
 
-/**
- * Strip the leading locale segment (if present) from a pathname.
- * e.g. /en/dashboard/admin -> /dashboard/admin
- */
 function stripLocalePrefix(pathname: string): string {
   const segments = pathname.split('/').filter(Boolean);
   if (segments[0] && (SUPPORTED_LOCALES as readonly string[]).includes(segments[0])) {
@@ -18,10 +14,6 @@ function stripLocalePrefix(pathname: string): string {
   return pathname;
 }
 
-/**
- * Lightweight JWT role check for Edge middleware.
- * Returns the user's role or null if token is missing/invalid.
- */
 async function getUserRoleFromCookie(request: NextRequest): Promise<string | null> {
   const token = request.cookies.get('access_token')?.value;
   if (!token) return null;
@@ -37,10 +29,6 @@ async function getUserRoleFromCookie(request: NextRequest): Promise<string | nul
   }
 }
 
-/**
- * Admin gate: returns a redirect/403 response if the user is not an admin,
- * or null if the request may proceed.
- */
 async function guardAdminRoute(
   request: NextRequest,
   pathname: string,
@@ -52,7 +40,6 @@ async function guardAdminRoute(
   const role = await getUserRoleFromCookie(request);
 
   if (role === null) {
-    // Not logged in -> /login?next=<original path>
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/login`;
     url.search = `?next=${encodeURIComponent(pathname)}`;
@@ -60,7 +47,6 @@ async function guardAdminRoute(
   }
 
   if (role !== 'admin') {
-    // Logged in but not admin -> /dashboard
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/dashboard`;
     url.search = '';
@@ -99,7 +85,7 @@ function detectLocaleFromHeader(acceptLanguage: string | null): Locale {
 }
 
 /** Paths that should never be locale-prefixed */
-const IGNORED_PREFIXES = ['/api/', '/_next/', '/favicon.ico', '/.well-known/', '/chat', '/oauth/'];
+const IGNORED_PREFIXES = ['/api/', '/_next/', '/favicon.ico', '/.well-known/', '/chat'];
 
 function shouldIgnore(pathname: string): boolean {
   return IGNORED_PREFIXES.some((p) => pathname.startsWith(p));
@@ -174,7 +160,6 @@ export async function middleware(request: NextRequest) {
       return response;
     }
 
-    // Admin route guard (before rewrite)
     const adminBlock = await guardAdminRoute(request, pathname, pathLocale);
     if (adminBlock) return adminBlock;
 
