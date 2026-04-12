@@ -39,6 +39,9 @@ const envSchema = z.object({
   PAYAPP_LINK_VAL: z.string().min(1).optional(),
   PAYAPP_FEEDBACK_URL: z.string().url().optional(),
 
+  // Partner API
+  PARTNER_API_KEY: z.string().min(1).optional(),
+
   // Operational
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),

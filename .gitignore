@@ -9,3 +9,7 @@ dist/
 *.log
 logs/
 .memory.db
+.claude/
+.mcp.json
+.user/
+*.tsbuildinfo

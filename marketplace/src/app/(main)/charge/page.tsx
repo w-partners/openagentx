@@ -7,20 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useDict } from '@/i18n/client';
 
-interface IMPResponse {
-  success: boolean;
-  imp_uid?: string;
-  error_msg?: string;
+interface PortOneV2 {
+  requestPayment: (params: Record<string, unknown>) => Promise<Record<string, unknown>>;
 }
 
-interface IMPInstance {
-  init: (code: string) => void;
-  request_pay: (params: Record<string, unknown>, callback: (response: IMPResponse) => void) => void;
+function getPortOne(): PortOneV2 | undefined {
+  return (window as unknown as { PortOne?: PortOneV2 }).PortOne;
 }
 
-function getIMP(): IMPInstance | undefined {
-  return (window as unknown as { IMP?: IMPInstance }).IMP;
-}
+const SDK_URL = 'https://cdn.portone.io/v2/browser-sdk.js';
 
 const PRESET_AMOUNTS = [1000, 5000, 10000, 50000, 100000];
 const MARKUP_RATE = 0.10; // 10%
@@ -80,10 +75,10 @@ export default function ChargePage() {
     fetchBalance();
     fetchHistory();
 
-    // Load PortOne SDK
-    if (!document.querySelector('script[src*="iamport"]')) {
+    // Load PortOne V2 SDK
+    if (!document.querySelector(`script[src="${SDK_URL}"]`)) {
       const script = document.createElement('script');
-      script.src = 'https://cdn.iamport.kr/v1/iamport.js';
+      script.src = SDK_URL;
       script.async = true;
       document.head.appendChild(script);
     }
@@ -92,8 +87,8 @@ export default function ChargePage() {
   const handleCharge = async () => {
     if (!activeAmount || activeAmount < 100) return;
 
-    const IMP = getIMP();
-    if (!IMP) {
+    const PortOne = getPortOne();
+    if (!PortOne) {
       setMessage({ type: 'error', text: 'Payment SDK not loaded. Please try again.' });
       return;
     }
@@ -101,48 +96,53 @@ export default function ChargePage() {
     setLoading(true);
     setMessage(null);
 
-    // Initialize PortOne
-    const merchantCode = process.env.NEXT_PUBLIC_PORTONE_MERCHANT_CODE ?? 'imp00000000';
-    IMP.init(merchantCode);
+    const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID;
+    const channelKey = process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY_CARD;
+    const paymentId = `charge_${Date.now()}`;
 
-    IMP.request_pay(
-      {
-        pg: 'html5_inicis',
-        pay_method: 'card',
-        merchant_uid: `charge_${Date.now()}`,
-        name: 'OpenAgentX Point Charge',
-        amount: activeAmount,
-      },
-      async (response) => {
-        if (response.success && response.imp_uid) {
-          try {
-            const res = await fetch('/api/charge', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                paymentId: response.imp_uid,
-                amount: activeAmount,
-                currency: 'KRW',
-              }),
-            });
-            if (res.ok) {
-              setMessage({ type: 'success', text: t.success ?? '충전이 완료되었습니다!' });
-              fetchBalance();
-              fetchHistory();
-              setSelectedAmount(null);
-              setCustomAmount('');
-            } else {
-              setMessage({ type: 'error', text: t.failed ?? '충전에 실패했습니다.' });
-            }
-          } catch {
-            setMessage({ type: 'error', text: t.failed ?? '충전에 실패했습니다.' });
-          }
-        } else {
-          setMessage({ type: 'error', text: response.error_msg ?? t.failed ?? '충전에 실패했습니다.' });
-        }
+    try {
+      const params: Record<string, unknown> = {
+        storeId,
+        paymentId,
+        orderName: 'OpenAgentX Point Charge',
+        totalAmount: activeAmount,
+        currency: 'CURRENCY_KRW',
+        payMethod: 'CARD',
+        redirectUrl: `${window.location.origin}/payment/complete`,
+      };
+      if (channelKey) params.channelKey = channelKey;
+
+      const response = await PortOne.requestPayment(params);
+
+      if (response.code != null) {
+        setMessage({ type: 'error', text: (response.message as string) ?? t.failed ?? '충전에 실패했습니다.' });
         setLoading(false);
-      },
-    );
+        return;
+      }
+
+      const res = await fetch('/api/charge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentId: (response.paymentId as string) ?? paymentId,
+          amount: activeAmount,
+          currency: 'KRW',
+        }),
+      });
+      if (res.ok) {
+        setMessage({ type: 'success', text: t.success ?? '충전이 완료되었습니다!' });
+        fetchBalance();
+        fetchHistory();
+        setSelectedAmount(null);
+        setCustomAmount('');
+      } else {
+        setMessage({ type: 'error', text: t.failed ?? '충전에 실패했습니다.' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: t.failed ?? '충전에 실패했습니다.' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

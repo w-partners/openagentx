@@ -85,7 +85,7 @@ export default function Checkout({ orderId, amount, amountUSDC, productName, buy
 
       {method === 'portone' ? (
         <PortOneButton orderId={orderId} amount={amount} productName={productName} buyer={buyer} payMethod={sub}
-          onSuccess={(r) => onComplete?.('portone', r as unknown as Record<string, unknown>)} onError={onError} />
+          onSuccess={(r) => onComplete?.('portone', r as Record<string, unknown>)} onError={onError} />
       ) : (
         <button type="button" disabled={busy} onClick={handleOther}
           className="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
