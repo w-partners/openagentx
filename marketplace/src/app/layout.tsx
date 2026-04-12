@@ -4,6 +4,7 @@ import "./globals.css";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { getLocale, getDictionary } from "@/i18n/index";
+import { TourProvider } from "@/components/tour/TourProvider";
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -91,6 +92,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <TourProvider />
           {children}
         </ThemeProvider>
       </body>

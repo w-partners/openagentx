@@ -1048,17 +1048,12 @@
     "tabs": {
       "overview": "개요",
       "users": "회원 관리",
-      "points": "포인트",
-      "chargeCodes": "충전코드",
       "agents": "에이전트",
-      "payments": "결제내역",
-      "topup": "충전요청",
       "pages": "페이지",
       "languages": "언어",
       "settings": "설정",
       "algorithm": "알고리즘",
-      "currency": "화폐",
-      "gpt": "GPT"
+      "currency": "화폐"
     },
     "overview": {
       "title": "플랫폼 개요",

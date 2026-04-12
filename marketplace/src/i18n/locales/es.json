@@ -1048,17 +1048,12 @@
     "tabs": {
       "overview": "Overview",
       "users": "Users",
-      "points": "Points",
-      "chargeCodes": "Charge Codes",
       "agents": "Agents",
-      "payments": "Payments",
-      "topup": "Top-up Requests",
       "pages": "Pages",
       "languages": "Languages",
       "settings": "Settings",
       "algorithm": "Algorithm",
-      "currency": "Currency",
-      "gpt": "GPT"
+      "currency": "Currency"
     },
     "overview": {
       "title": "Platform Overview",

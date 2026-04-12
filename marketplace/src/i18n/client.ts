@@ -11,6 +11,7 @@ import {
   type Locale,
   type Dictionary,
 } from './config';
+import { useIsAdminLocale } from '@/components/admin-locale-provider';
 
 /** Client-side: get current locale from cookie */
 export function getClientLocale(): Locale {
@@ -50,10 +51,17 @@ export function detectClientLocale(): Locale {
   return getClientLocale();
 }
 
-/** React hook: get dictionary for current locale (URL path based) */
+/** React hook: get dictionary for current locale (admin always gets Korean) */
 export function useDict(): Dictionary {
+  const isAdmin = useIsAdminLocale();
+  if (isAdmin) return getTranslations('ko');
   const locale = detectClientLocale();
   return getTranslations(locale);
+}
+
+/** React hook: always return Korean dictionary (for admin pages) */
+export function useAdminDict(): Dictionary {
+  return getTranslations('ko');
 }
 
 export {

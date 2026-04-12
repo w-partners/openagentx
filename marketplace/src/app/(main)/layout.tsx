@@ -1,8 +1,23 @@
 import { cookies } from "next/headers";
-import { getLocale, getDictionary } from "@/i18n/index";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { getLocale, getDictionary, getTranslations } from "@/i18n/index";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { query } from "@/lib/db/pool";
+import { AdminLocaleProvider } from "@/components/admin-locale-provider";
+
+function getAppVersion(): string {
+  try {
+    const versionPath = join(process.cwd(), '..', 'version.json');
+    const data = JSON.parse(readFileSync(versionPath, 'utf-8'));
+    const base = data.version || '0.0.0.0';
+    if (data.stage && data.iteration) return `${base}-${data.stage}.${data.iteration}`;
+    return base;
+  } catch {
+    return process.env.APP_VERSION || '0.0.0.0';
+  }
+}
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
@@ -34,6 +49,10 @@ export default async function MainLayout({
     }
   }
 
+  const isAdmin = userRole === 'admin';
+  const effectiveLocale = isAdmin ? 'ko' : locale;
+  const effectiveDict = isAdmin ? getTranslations('ko') : dict;
+
   let enabledPages: string[] = [];
   try {
     const result = await query("SELECT value FROM site_settings WHERE key = 'enabled_pages'");
@@ -46,10 +65,10 @@ export default async function MainLayout({
   }
 
   return (
-    <>
-      <Header dict={dict} locale={locale} isLoggedIn={isLoggedIn} userRole={userRole} enabledPages={enabledPages} />
+    <AdminLocaleProvider isAdmin={isAdmin}>
+      <Header dict={effectiveDict} locale={effectiveLocale} isLoggedIn={isLoggedIn} userRole={userRole} enabledPages={enabledPages} />
       <main className="container mx-auto px-4 py-8">{children}</main>
-      <Footer dict={dict} version={process.env.APP_VERSION} />
-    </>
+      <Footer dict={effectiveDict} version={getAppVersion()} />
+    </AdminLocaleProvider>
   );
 }

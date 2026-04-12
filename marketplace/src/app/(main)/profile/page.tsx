@@ -6,6 +6,8 @@ import TopupSection from './topup-section';
 import ReferralSection from './referral-section';
 import RewardSection from './reward-section';
 import TrialCreditBadge from './trial-credit-badge';
+import ApiKeySection from '@/components/profile/api-key-section';
+import PinSection from '@/components/profile/pin-section';
 import { useDict } from '@/i18n/client';
 
 // Demo user data (replace with API/session fetch)
@@ -117,14 +119,17 @@ export default function ProfilePage() {
           <CardContent>
             <div className="flex gap-2">
               <a
-                href="#topup"
+                href="/charge"
                 className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Top Up
               </a>
-              <button className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors">
+              <a
+                href="/withdraw"
+                className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
+              >
                 Withdraw
-              </button>
+              </a>
             </div>
           </CardContent>
         </Card>
@@ -134,6 +139,14 @@ export default function ProfilePage() {
             <CardDescription>{dict.profilePage.totalPurchases}</CardDescription>
             <CardTitle className="text-2xl">{jobHistory.length}</CardTitle>
           </CardHeader>
+          <CardContent>
+            <a
+              href="/orders"
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
+            >
+              View Orders
+            </a>
+          </CardContent>
         </Card>
 
         <Card>
@@ -157,6 +170,16 @@ export default function ProfilePage() {
       {/* Reward history section */}
       <div id="rewards">
         <RewardSection />
+      </div>
+
+      {/* API Key management */}
+      <div id="api-keys">
+        <ApiKeySection />
+      </div>
+
+      {/* Payment PIN management */}
+      <div id="pin">
+        <PinSection />
       </div>
 
       {/* Job history */}
