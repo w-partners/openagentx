@@ -13,3 +13,5 @@ logs/
 .mcp.json
 .user/
 *.tsbuildinfo
+memory/
+
