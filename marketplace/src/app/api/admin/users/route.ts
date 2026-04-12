@@ -1,39 +1,64 @@
 import { NextRequest } from 'next/server';
-import { apiJson, apiError, requireAuth, AuthError } from '@/lib/utils/api-response';
-import * as usersRepo from '@/lib/db/repositories/users';
+import { apiJson, apiError, AuthError } from '@/lib/utils/api-response';
+import { requireAdmin, ForbiddenError } from '@/lib/auth/require-admin';
 import { query } from '@/lib/db/pool';
-
-async function requireAdmin(request: NextRequest): Promise<string> {
-  const userId = requireAuth(request);
-  const user = await usersRepo.findById(userId);
-  if (!user || user.role !== 'admin') {
-    throw new ForbiddenError();
-  }
-  return userId;
-}
-
-class ForbiddenError extends Error {
-  constructor() {
-    super('관리자 권한이 필요합니다');
-  }
-}
 
 export async function GET(request: NextRequest) {
   try {
     await requireAdmin(request);
 
-    const result = await query<{
-      id: string;
-      email: string | null;
-      nickname: string;
-      role: string;
-      created_at: Date;
-      is_active: boolean;
-    }>(
-      'SELECT id, email, nickname, role, created_at, COALESCE(is_active, true) as is_active FROM users ORDER BY created_at DESC',
-    );
+    const { searchParams } = request.nextUrl;
+    const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
+    const limit = Math.min(parseInt(searchParams.get('limit') ?? '20', 10), 100);
+    const offset = (page - 1) * limit;
+    const search = searchParams.get('search') ?? '';
+    const roleFilter = searchParams.get('role') ?? '';
 
-    return apiJson({ users: result.rows });
+    const conditions = ['1=1'];
+    const values: unknown[] = [];
+    let idx = 1;
+
+    if (search) {
+      conditions.push(`(email ILIKE $${idx} OR nickname ILIKE $${idx})`);
+      values.push(`%${search}%`);
+      idx++;
+    }
+    if (roleFilter) {
+      conditions.push(`role = $${idx++}`);
+      values.push(roleFilter);
+    }
+
+    const where = conditions.join(' AND ');
+
+    const [dataResult, countResult] = await Promise.all([
+      query<{
+        id: string;
+        email: string | null;
+        nickname: string;
+        role: string;
+        balance_usdc: number;
+        created_at: Date;
+        is_active: boolean;
+      }>(
+        `SELECT id, email, nickname, role, balance_usdc, created_at, COALESCE(is_active, true) as is_active
+         FROM users
+         WHERE ${where}
+         ORDER BY created_at DESC
+         LIMIT $${idx++} OFFSET $${idx++}`,
+        [...values, limit, offset],
+      ),
+      query<{ count: string }>(
+        `SELECT COUNT(*) as count FROM users WHERE ${where}`,
+        values,
+      ),
+    ]);
+
+    return apiJson({
+      users: dataResult.rows,
+      total: parseInt(countResult.rows[0].count, 10),
+      page,
+      limit,
+    });
   } catch (err) {
     if (err instanceof AuthError) return apiError(err.message, 401);
     if (err instanceof ForbiddenError) return apiError(err.message, 403);

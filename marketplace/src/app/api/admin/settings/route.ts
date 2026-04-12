@@ -1,22 +1,7 @@
 import { NextRequest } from 'next/server';
-import { apiJson, apiError, requireAuth, AuthError } from '@/lib/utils/api-response';
-import * as usersRepo from '@/lib/db/repositories/users';
+import { apiJson, apiError, AuthError } from '@/lib/utils/api-response';
+import { requireAdmin, ForbiddenError } from '@/lib/auth/require-admin';
 import { query } from '@/lib/db/pool';
-
-class ForbiddenError extends Error {
-  constructor() {
-    super('관리자 권한이 필요합니다');
-  }
-}
-
-async function requireAdmin(request: NextRequest): Promise<string> {
-  const userId = requireAuth(request);
-  const user = await usersRepo.findById(userId);
-  if (!user || user.role !== 'admin') {
-    throw new ForbiddenError();
-  }
-  return userId;
-}
 
 async function ensureTable() {
   await query(`

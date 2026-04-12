@@ -101,16 +101,16 @@ export default function AdminDashboardPage() {
         <TabsList className="w-full flex-wrap">
           <TabsTrigger value="overview">{tabs.overview}</TabsTrigger>
           <TabsTrigger value="users">{tabs.users}</TabsTrigger>
-          <TabsTrigger value="points">{tabs.points ?? 'Points'}</TabsTrigger>
-          <TabsTrigger value="charge-codes">{tabs.chargeCodes ?? 'Charge Codes'}</TabsTrigger>
+          <TabsTrigger value="points">포인트</TabsTrigger>
+          <TabsTrigger value="charge-codes">충전코드</TabsTrigger>
           <TabsTrigger value="agents">{tabs.agents}</TabsTrigger>
-          <TabsTrigger value="payments">{tabs.payments ?? 'Payments'}</TabsTrigger>
-          <TabsTrigger value="topup">{tabs.topup ?? 'Top-up'}</TabsTrigger>
+          <TabsTrigger value="payments">결제내역</TabsTrigger>
+          <TabsTrigger value="topup">충전요청</TabsTrigger>
           <TabsTrigger value="pages">{tabs.pages}</TabsTrigger>
           <TabsTrigger value="languages">{tabs.languages}</TabsTrigger>
           <TabsTrigger value="algorithm">{tabs.algorithm}</TabsTrigger>
           <TabsTrigger value="currency">{tabs.currency ?? 'Currency'}</TabsTrigger>
-          <TabsTrigger value="gpt">{tabs.gpt ?? 'GPT'}</TabsTrigger>
+          <TabsTrigger value="gpt">GPT</TabsTrigger>
           <TabsTrigger value="settings">{tabs.settings}</TabsTrigger>
         </TabsList>
 

@@ -1,22 +1,7 @@
 import { NextRequest } from 'next/server';
-import { apiJson, apiError, requireAuth, AuthError } from '@/lib/utils/api-response';
-import * as usersRepo from '@/lib/db/repositories/users';
+import { apiJson, apiError, AuthError } from '@/lib/utils/api-response';
+import { requireAdmin, ForbiddenError } from '@/lib/auth/require-admin';
 import { query } from '@/lib/db/pool';
-
-class ForbiddenError extends Error {
-  constructor() {
-    super('관리자 권한이 필요합니다');
-  }
-}
-
-async function requireAdmin(request: NextRequest): Promise<string> {
-  const userId = requireAuth(request);
-  const user = await usersRepo.findById(userId);
-  if (!user || user.role !== 'admin') {
-    throw new ForbiddenError();
-  }
-  return userId;
-}
 
 async function ensureColumns() {
   await query(`ALTER TABLE agents ADD COLUMN IF NOT EXISTS is_pinned BOOLEAN DEFAULT FALSE`);
@@ -31,6 +16,70 @@ export async function GET(request: NextRequest) {
     await requireAdmin(request);
     await ensureColumns();
 
+    const { searchParams } = request.nextUrl;
+    const source = searchParams.get('source') ?? 'agents'; // 'agents' | 'custom'
+
+    if (source === 'custom') {
+      // Custom agents (user-created)
+      const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
+      const limit = Math.min(parseInt(searchParams.get('limit') ?? '20', 10), 100);
+      const offset = (page - 1) * limit;
+      const category = searchParams.get('category') ?? '';
+      const status = searchParams.get('status') ?? '';
+
+      const conditions = ['1=1'];
+      const values: unknown[] = [];
+      let idx = 1;
+
+      if (category) {
+        conditions.push(`ca.category = $${idx++}`);
+        values.push(category);
+      }
+      if (status) {
+        conditions.push(`ca.status = $${idx++}`);
+        values.push(status);
+      }
+
+      const where = conditions.join(' AND ');
+
+      const [dataResult, countResult] = await Promise.all([
+        query<{
+          id: string;
+          name: string;
+          category: string;
+          creator_id: string;
+          creator_email: string | null;
+          creator_nickname: string;
+          status: string;
+          price_points: number;
+          usage_count: number;
+          created_at: Date;
+        }>(
+          `SELECT ca.id, ca.name, ca.category, ca.creator_id, u.email as creator_email, u.nickname as creator_nickname,
+                  ca.status, ca.price_points, ca.usage_count, ca.created_at
+           FROM custom_agents ca
+           LEFT JOIN users u ON u.id = ca.creator_id
+           WHERE ${where}
+           ORDER BY ca.created_at DESC
+           LIMIT $${idx++} OFFSET $${idx++}`,
+          [...values, limit, offset],
+        ),
+        query<{ count: string }>(
+          `SELECT COUNT(*) as count FROM custom_agents ca WHERE ${where}`,
+          values,
+        ),
+      ]);
+
+      return apiJson({
+        agents: dataResult.rows,
+        total: parseInt(countResult.rows[0].count, 10),
+        page,
+        limit,
+        source: 'custom',
+      });
+    }
+
+    // Default: platform agents
     const result = await query<{
       id: string;
       name: string;
@@ -57,7 +106,7 @@ export async function GET(request: NextRequest) {
        ORDER BY is_pinned DESC, ranking_score DESC, created_at DESC`,
     );
 
-    return apiJson({ agents: result.rows });
+    return apiJson({ agents: result.rows, source: 'agents' });
   } catch (err) {
     if (err instanceof AuthError) return apiError(err.message, 401);
     if (err instanceof ForbiddenError) return apiError(err.message, 403);
@@ -96,6 +145,18 @@ export async function POST(request: NextRequest) {
           [multiplier, agentId],
         );
         return apiJson({ message: 'Boost updated' });
+      }
+
+      case 'updateCustomStatus': {
+        const { status } = body;
+        if (!status || !['active', 'disabled', 'featured'].includes(status)) {
+          return apiError('status는 active, disabled, featured 중 하나여야 합니다');
+        }
+        await query(
+          `UPDATE custom_agents SET status = $1, updated_at = NOW() WHERE id = $2`,
+          [status, agentId],
+        );
+        return apiJson({ message: '커스텀 에이전트 상태가 변경되었습니다' });
       }
 
       default:
