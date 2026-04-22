@@ -17,6 +17,8 @@ export interface CustomAgent {
   reference_urls: string[];
   status: string;
   usage_count: number;
+  is_free: boolean;
+  allowed_tools: string[] | null;
   created_at: Date;
   updated_at: Date;
 }

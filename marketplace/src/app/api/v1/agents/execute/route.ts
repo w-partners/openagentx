@@ -62,6 +62,8 @@ export async function POST(request: NextRequest) {
           error: '잔액이 부족합니다',
           required: costPoints,
           current: balance,
+          topup_url: 'https://openagentx.org/topup',
+          signup_url: 'https://openagentx.org/register',
         },
         402,
       );
@@ -88,7 +90,12 @@ export async function POST(request: NextRequest) {
     try {
       let result: string;
       if (isCustom && customAgentData) {
-        result = await executeCustomAgent(customAgentData.system_prompt, customAgentData.name, input);
+        result = await executeCustomAgent(
+          customAgentData.system_prompt,
+          customAgentData.name,
+          input,
+          customAgentData.allowed_tools ?? undefined,
+        );
         // usage_count 증가
         incrementUsageCount(agentId).catch(() => {});
       } else {

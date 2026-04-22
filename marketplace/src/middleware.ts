@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
+import { jwtVerify, JWTPayload } from 'jose';
 
 const SUPPORTED_LOCALES = ['en', 'ko', 'ja', 'zh', 'es', 'fr'] as const;
 type Locale = (typeof SUPPORTED_LOCALES)[number];
@@ -46,7 +46,7 @@ async function guardAdminRoute(
     return NextResponse.redirect(url);
   }
 
-  if (role !== 'admin') {
+  if (!['admin', 'site_admin', 'platform_admin'].includes(role)) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/dashboard`;
     url.search = '';
@@ -89,6 +89,34 @@ const IGNORED_PREFIXES = ['/api/', '/_next/', '/favicon.ico', '/.well-known/', '
 
 function shouldIgnore(pathname: string): boolean {
   return IGNORED_PREFIXES.some((p) => pathname.startsWith(p));
+}
+
+/**
+ * For API routes: inject x-user-id and x-user-role from JWT cookie
+ * so that requireAuth() / requireAdmin() can read them.
+ */
+async function injectUserHeaders(request: NextRequest): Promise<NextResponse> {
+  const token = request.cookies.get('access_token')?.value;
+  if (!token) return NextResponse.next();
+
+  try {
+    const secret = new TextEncoder().encode(
+      process.env.NEXTAUTH_SECRET || process.env.JWT_SECRET || '',
+    );
+    if (secret.length === 0) return NextResponse.next();
+    const { payload } = await jwtVerify(token, secret);
+    const userId = payload.userId as string | undefined;
+    const role = payload.role as string | undefined;
+    if (!userId) return NextResponse.next();
+
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-user-id', userId);
+    if (role) requestHeaders.set('x-user-role', role);
+
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  } catch {
+    return NextResponse.next();
+  }
 }
 
 /**
@@ -138,6 +166,10 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (shouldIgnore(pathname)) {
+    // For API routes, inject user headers from JWT cookie
+    if (pathname.startsWith('/api/')) {
+      return injectUserHeaders(request);
+    }
     return NextResponse.next();
   }
 

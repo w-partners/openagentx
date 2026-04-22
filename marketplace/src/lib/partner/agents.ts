@@ -116,7 +116,9 @@ export const DEFAULT_AGENTS: PartnerAgent[] = [
   },
 ];
 
-import { callGeminiProxy } from '@/lib/ai/gemini-proxy';
+import { runClaude } from './claude-runner';
+
+const USE_CLAUDE = process.env.AGENT_ENGINE !== 'gemini'; // 기본: claude -p
 
 export async function executeAgent(
   agentId: string,
@@ -127,6 +129,16 @@ export async function executeAgent(
 
   const systemPrompt = `당신은 "${agent.name}"입니다. ${agent.description}\n기능: ${agent.capabilities.join(', ')}\n한국어로 전문적이고 실용적으로 답변하세요.`;
 
+  if (USE_CLAUDE) {
+    return runClaude({
+      systemPrompt,
+      input,
+      model: 'sonnet',
+      maxTurns: 5,
+    });
+  }
+
+  const { callGeminiProxy } = await import('@/lib/ai/gemini-proxy');
   return callGeminiProxy([
     { role: 'system', content: systemPrompt },
     { role: 'user', content: input },
@@ -138,7 +150,19 @@ export async function executeCustomAgent(
   systemPrompt: string,
   _agentName: string,
   input: string,
+  allowedTools?: string[],
 ): Promise<string> {
+  if (USE_CLAUDE) {
+    return runClaude({
+      systemPrompt,
+      input,
+      model: 'sonnet',
+      maxTurns: 15,
+      allowedTools: allowedTools ?? [],
+    });
+  }
+
+  const { callGeminiProxy } = await import('@/lib/ai/gemini-proxy');
   return callGeminiProxy([
     { role: 'system', content: systemPrompt },
     { role: 'user', content: input },

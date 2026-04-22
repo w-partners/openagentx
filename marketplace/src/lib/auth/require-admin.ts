@@ -8,10 +8,12 @@ export class ForbiddenError extends Error {
   }
 }
 
+const ADMIN_ROLES = ['admin', 'site_admin', 'platform_admin'];
+
 export async function requireAdmin(request: NextRequest): Promise<string> {
   const userId = requireAuth(request);
   const user = await usersRepo.findById(userId);
-  if (!user || user.role !== 'admin') {
+  if (!user || !ADMIN_ROLES.includes(user.role)) {
     throw new ForbiddenError();
   }
   return userId;

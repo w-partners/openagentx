@@ -80,6 +80,21 @@ export async function POST(request: NextRequest) {
       return apiJson({ message: 'Role updated' });
     }
 
+    if (action === 'updateUser') {
+      const { userId, nickname, email: newEmail } = body;
+      if (!userId) return apiError('userId is required');
+      const sets: string[] = [];
+      const vals: unknown[] = [];
+      let i = 1;
+      if (nickname !== undefined) { sets.push(`nickname = $${i++}`); vals.push(nickname); }
+      if (newEmail !== undefined) { sets.push(`email = $${i++}`); vals.push(newEmail); }
+      if (sets.length === 0) return apiError('변경할 항목이 없습니다');
+      sets.push(`updated_at = NOW()`);
+      vals.push(userId);
+      await query(`UPDATE users SET ${sets.join(', ')} WHERE id = $${i}`, vals);
+      return apiJson({ message: 'User updated' });
+    }
+
     if (action === 'toggleActive') {
       const { userId } = body;
       if (!userId) return apiError('userId is required');

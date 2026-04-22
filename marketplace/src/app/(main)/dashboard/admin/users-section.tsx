@@ -28,6 +28,9 @@ export default function UsersSection() {
   const [grantTarget, setGrantTarget] = useState<string | null>(null);
   const [grantAmount, setGrantAmount] = useState('');
   const [grantReason, setGrantReason] = useState('');
+  const [editTarget, setEditTarget] = useState<string | null>(null);
+  const [editNickname, setEditNickname] = useState('');
+  const [editEmail, setEditEmail] = useState('');
 
   const fetchUsers = useCallback(() => {
     setLoading(true);
@@ -69,6 +72,7 @@ export default function UsersSection() {
   const handleRoleChange = async (userId: string, newRole: string) => {
     const res = await fetch('/api/admin/users', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'updateRole', userId, role: newRole }),
     });
@@ -78,6 +82,7 @@ export default function UsersSection() {
   const handleToggleActive = async (userId: string) => {
     const res = await fetch('/api/admin/users', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'toggleActive', userId }),
     });
@@ -92,6 +97,7 @@ export default function UsersSection() {
     }
     const res = await fetch('/api/admin/points', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, amount, type: 'grant', reason: grantReason }),
     });
@@ -103,6 +109,28 @@ export default function UsersSection() {
     } else {
       const d = await res.json();
       alert(d.error ?? '오류가 발생했습니다');
+    }
+  };
+
+  const startEdit = (user: AdminUser) => {
+    setEditTarget(user.id);
+    setEditNickname(user.nickname);
+    setEditEmail(user.email ?? '');
+  };
+
+  const handleUpdateUser = async (userId: string) => {
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'updateUser', userId, nickname: editNickname, email: editEmail }),
+    });
+    if (res.ok) {
+      setEditTarget(null);
+      fetchUsers();
+    } else {
+      const d = await res.json();
+      alert(d.error ?? '수정 실패');
     }
   };
 
@@ -194,12 +222,46 @@ export default function UsersSection() {
                       variant="outline"
                       size="sm"
                       className="text-xs h-7 px-2"
+                      onClick={() => startEdit(user)}
+                    >
+                      수정
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7 px-2"
                       onClick={() => setGrantTarget(grantTarget === user.id ? null : user.id)}
                     >
                       포인트
                     </Button>
                   </div>
                 </div>
+                {/* Edit user inline form */}
+                {editTarget === user.id && (
+                  <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/30 border-b flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-medium text-muted-foreground">닉네임</span>
+                    <Input
+                      value={editNickname}
+                      onChange={(e) => setEditNickname(e.target.value)}
+                      className="w-36 h-8 text-sm"
+                      placeholder="닉네임"
+                    />
+                    <span className="text-xs font-medium text-muted-foreground">이메일</span>
+                    <Input
+                      type="email"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      className="w-48 h-8 text-sm"
+                      placeholder="이메일"
+                    />
+                    <Button size="sm" className="h-8 text-xs" onClick={() => handleUpdateUser(user.id)}>
+                      저장
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setEditTarget(null)}>
+                      취소
+                    </Button>
+                  </div>
+                )}
                 {/* Grant points inline form */}
                 {grantTarget === user.id && (
                   <div className="px-4 py-3 bg-muted/50 border-b flex items-center gap-2 flex-wrap">
