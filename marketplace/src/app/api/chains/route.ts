@@ -120,6 +120,13 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
 
   try {
+    // Featured packs (curated)
+    if (searchParams.get('featured') === 'true') {
+      const limit = Number(searchParams.get('limit')) || 6;
+      const flows = await chainsRepo.findFeaturedFlows(limit);
+      return apiJson({ data: flows, meta: { total: flows.length, featured: true } });
+    }
+
     // List flows
     if (searchParams.get('flows') === 'true') {
       const category = searchParams.get('category') ?? undefined;

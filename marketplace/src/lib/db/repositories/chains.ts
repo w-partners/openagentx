@@ -34,6 +34,8 @@ export interface ChainFlow {
   is_public: boolean;
   total_uses: number;
   created_at: Date;
+  tags: string[];
+  is_featured: boolean;
 }
 
 export interface ChainInstance {
@@ -125,6 +127,17 @@ export async function findFlowById(id: string): Promise<ChainFlow | null> {
     [id],
   );
   return result.rows[0] ?? null;
+}
+
+export async function findFeaturedFlows(limit: number = 6): Promise<ChainFlow[]> {
+  const result = await query<ChainFlow>(
+    `SELECT * FROM chain_flows
+     WHERE is_public = TRUE AND is_featured = TRUE
+     ORDER BY total_uses DESC, created_at DESC
+     LIMIT $1`,
+    [Math.min(limit, MAX_PAGE_SIZE)],
+  );
+  return result.rows;
 }
 
 export async function startChain(
