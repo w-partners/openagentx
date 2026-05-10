@@ -4,8 +4,21 @@ import ja from './locales/ja.json';
 import zh from './locales/zh.json';
 import es from './locales/es.json';
 import fr from './locales/fr.json';
+import de from './locales/de.json';
+import it from './locales/it.json';
+import pt from './locales/pt.json';
+import ru from './locales/ru.json';
+import vi from './locales/vi.json';
+import id from './locales/id.json';
+import th from './locales/th.json';
+import tr from './locales/tr.json';
+import ar from './locales/ar.json';
+import hi from './locales/hi.json';
 
-export const SUPPORTED_LOCALES = ['en', 'ko', 'ja', 'zh', 'es', 'fr'] as const;
+export const SUPPORTED_LOCALES = [
+  'en', 'ko', 'ja', 'zh', 'es', 'fr',
+  'de', 'it', 'pt', 'ru', 'vi', 'id', 'th', 'tr', 'ar', 'hi',
+] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = 'en';
 export const LOCALE_COOKIE = 'NEXT_LOCALE';
@@ -17,6 +30,16 @@ export const LOCALE_NAMES: Record<Locale, string> = {
   zh: '\u7B80\u4F53\u4E2D\u6587',
   es: 'Espa\u00F1ol',
   fr: 'Fran\u00E7ais',
+  de: 'Deutsch',
+  it: 'Italiano',
+  pt: 'Portugu\u00EAs',
+  ru: '\u0420\u0443\u0441\u0441\u043A\u0438\u0439',
+  vi: 'Ti\u1EBFng Vi\u1EC7t',
+  id: 'Bahasa Indonesia',
+  th: '\u0E44\u0E17\u0E22',
+  tr: 'T\u00FCrk\u00E7e',
+  ar: '\u0627\u0644\u0639\u0631\u0628\u064A\u0629',
+  hi: '\u0939\u093F\u0928\u094D\u0926\u0940',
 };
 
 export const LOCALE_FLAGS: Record<Locale, string> = {
@@ -26,9 +49,22 @@ export const LOCALE_FLAGS: Record<Locale, string> = {
   zh: '\u{1F1E8}\u{1F1F3}',
   es: '\u{1F1EA}\u{1F1F8}',
   fr: '\u{1F1EB}\u{1F1F7}',
+  de: '\u{1F1E9}\u{1F1EA}',
+  it: '\u{1F1EE}\u{1F1F9}',
+  pt: '\u{1F1F5}\u{1F1F9}',
+  ru: '\u{1F1F7}\u{1F1FA}',
+  vi: '\u{1F1FB}\u{1F1F3}',
+  id: '\u{1F1EE}\u{1F1E9}',
+  th: '\u{1F1F9}\u{1F1ED}',
+  tr: '\u{1F1F9}\u{1F1F7}',
+  ar: '\u{1F1F8}\u{1F1E6}',
+  hi: '\u{1F1EE}\u{1F1F3}',
 };
 
-const dictionaries: Record<Locale, typeof en> = { en, ko, ja, zh, es, fr };
+const dictionaries: Record<Locale, typeof en> = {
+  en, ko, ja, zh, es, fr,
+  de, it, pt, ru, vi, id, th, tr, ar, hi,
+};
 
 export type Dictionary = typeof en;
 
