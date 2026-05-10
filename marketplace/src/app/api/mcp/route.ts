@@ -83,6 +83,18 @@ const MCP_TOOLS = [
       properties: {},
     },
   },
+  {
+    name: 'request_topup',
+    description:
+      'Request a top-up payment link to charge points. Returns a PortOne checkout URL the user can open in a browser to pay (KRW or USDC).',
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        amount: { type: 'number', description: 'Charge amount in KRW (won). Defaults to 10000.' },
+        currency: { type: 'string', description: 'Currency code: "KRW" (default) or "USDC".' },
+      },
+    },
+  },
 ];
 
 // ─── JSON-RPC helpers ───────────────────────────────────────────────────────
@@ -263,6 +275,25 @@ function handleListCategories() {
   return textContent(JSON.stringify({ categories }, null, 2));
 }
 
+function handleRequestTopup(args: Record<string, unknown>) {
+  const amount = Number(args.amount) > 0 ? Number(args.amount) : 10000;
+  const currency = String(args.currency ?? 'KRW').toUpperCase();
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://openagentx.org';
+  const topupUrl = `${baseUrl}/charge?amount=${amount}&currency=${currency}`;
+  return textContent(
+    JSON.stringify(
+      {
+        topup_url: topupUrl,
+        amount,
+        currency,
+        message: '브라우저에서 위 URL을 열어 결제를 완료하세요. 결제 완료 후 자동으로 포인트가 충전됩니다.',
+      },
+      null,
+      2,
+    ),
+  );
+}
+
 // ─── Route Handlers ─────────────────────────────────────────────────────────
 
 const CORS_HEADERS = {
@@ -348,6 +379,9 @@ export async function POST(request: NextRequest) {
             break;
           case 'list_categories':
             result = handleListCategories();
+            break;
+          case 'request_topup':
+            result = handleRequestTopup(toolArgs);
             break;
           default:
             return NextResponse.json(

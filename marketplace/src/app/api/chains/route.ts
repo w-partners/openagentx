@@ -3,6 +3,12 @@ import * as chainsRepo from '@/lib/db/repositories/chains';
 import { executeStep, onStepComplete } from '@/lib/chains/executor';
 import { z } from 'zod';
 import { apiJson, apiCatchError, requireAuth, AuthError, parsePagination } from '@/lib/utils/api-response';
+import { query } from '@/lib/db/pool';
+
+async function isAdmin(userId: string): Promise<boolean> {
+  const r = await query<{ role: string }>('SELECT role FROM users WHERE id = $1', [userId]);
+  return r.rows[0]?.role === 'admin';
+}
 
 const stepSchema = z.object({
   name: z.string().min(1).max(200),
@@ -26,6 +32,8 @@ const createFlowSchema = z.object({
   description: z.string().max(5000).optional(),
   category: z.string().min(1),
   steps: z.array(stepSchema).min(2, '체인에는 최소 2개의 단계가 필요합니다').max(20),
+  tags: z.array(z.string()).max(10).optional(),
+  is_featured: z.boolean().optional(),
 });
 
 const startChainSchema = z.object({
@@ -61,6 +69,13 @@ export async function POST(request: NextRequest) {
         parsed.data.description ?? null,
         parsed.data.category,
         parsed.data.steps,
+        {
+          tags: parsed.data.tags,
+          // is_featured는 관리자만 적용 (DB에서 SELECT role FROM users) — 비관리자는 false 강제
+          is_featured: parsed.data.is_featured && userId
+            ? await isAdmin(userId)
+            : false,
+        },
       );
       return apiJson({ data: { id } }, 201);
     }
@@ -120,6 +135,13 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
 
   try {
+    // Featured packs (curated)
+    if (searchParams.get('featured') === 'true') {
+      const limit = Number(searchParams.get('limit')) || 6;
+      const flows = await chainsRepo.findFeaturedFlows(limit);
+      return apiJson({ data: flows, meta: { total: flows.length, featured: true } });
+    }
+
     // List flows
     if (searchParams.get('flows') === 'true') {
       const category = searchParams.get('category') ?? undefined;

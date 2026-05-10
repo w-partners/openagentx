@@ -246,8 +246,17 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     if (err instanceof AuthError) return apiJson({ error: err.message }, 401);
     const message = toErrorMessage(err);
-    const status = message.includes('잔액') ? 402 : 400;
-    return apiJson({ error: message }, status);
+    if (message.includes('잔액')) {
+      return apiJson(
+        {
+          error: message,
+          topup_url: 'https://openagentx.org/charge',
+          signup_url: 'https://openagentx.org/register',
+        },
+        402,
+      );
+    }
+    return apiJson({ error: message }, 400);
   }
 }
 

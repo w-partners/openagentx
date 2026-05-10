@@ -34,6 +34,8 @@ export interface ChainFlow {
   is_public: boolean;
   total_uses: number;
   created_at: Date;
+  tags: string[];
+  is_featured: boolean;
 }
 
 export interface ChainInstance {
@@ -75,12 +77,16 @@ export async function createFlow(
   description: string | null,
   category: string,
   steps: ChainStep[],
+  options?: { tags?: string[]; is_featured?: boolean },
 ): Promise<string> {
   const result = await query<{ id: string }>(
-    `INSERT INTO chain_flows (creator_id, name, description, category, steps)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO chain_flows (creator_id, name, description, category, steps, tags, is_featured)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING id`,
-    [creatorId, name, description, category, JSON.stringify(steps)],
+    [
+      creatorId, name, description, category, JSON.stringify(steps),
+      options?.tags ?? [], options?.is_featured ?? false,
+    ],
   );
   return result.rows[0].id;
 }
@@ -125,6 +131,17 @@ export async function findFlowById(id: string): Promise<ChainFlow | null> {
     [id],
   );
   return result.rows[0] ?? null;
+}
+
+export async function findFeaturedFlows(limit: number = 6): Promise<ChainFlow[]> {
+  const result = await query<ChainFlow>(
+    `SELECT * FROM chain_flows
+     WHERE is_public = TRUE AND is_featured = TRUE
+     ORDER BY total_uses DESC, created_at DESC
+     LIMIT $1`,
+    [Math.min(limit, MAX_PAGE_SIZE)],
+  );
+  return result.rows;
 }
 
 export async function startChain(

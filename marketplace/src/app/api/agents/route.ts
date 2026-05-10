@@ -9,9 +9,10 @@ const createAgentSchema = z.object({
   description: z.string().min(10).max(5000),
   description_ko: z.string().optional(),
   category: z.string().min(1),
-  tags: z.array(z.string()).optional(),
+  tags: z.array(z.string()).max(20).optional(),
   logo_url: z.string().url().optional(),
   commission_rate: z.number().min(0).max(1).optional(),
+  sample_images: z.array(z.string()).max(10).optional(),
 });
 
 // GET /api/agents — List/Search agents

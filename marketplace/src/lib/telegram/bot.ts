@@ -656,8 +656,15 @@ export async function handleTelegramUpdate(update: TelegramUpdate): Promise<void
     } catch {
       await sendMessage(chatId, '⚠️ 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     }
-  } else {
+  } else if (text.startsWith('/')) {
     await sendMessage(chatId, '알 수 없는 명령어입니다. /help 로 사용 가능한 명령어를 확인하세요.');
+  } else {
+    // Natural-language message → route to /search (hybridSearch handles natural text)
+    try {
+      await commands['/search'](chatId, text, message);
+    } catch {
+      await sendMessage(chatId, '⚠️ 검색 중 오류가 발생했습니다.');
+    }
   }
 }
 

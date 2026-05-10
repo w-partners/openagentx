@@ -17,3 +17,6 @@ memory/
 
 memory/
 
+# user-uploaded media (사용자 업로드 이미지 — git 추적 제외)
+marketplace/public/uploads/
+

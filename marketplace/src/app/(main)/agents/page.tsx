@@ -11,6 +11,32 @@ import { SERVICE_CATEGORIES } from '@/lib/utils/constants';
 import { useDict } from '@/i18n/client';
 import { type PointConfig, type PaymentMode, DEFAULT_POINT_CONFIG, usdcToPoints, formatPoints } from '@/lib/utils/points';
 
+interface ApiAgent {
+  id: string;
+  name: string;
+  description: string;
+  description_ko?: string | null;
+  category: string;
+  tags?: string[];
+  avg_rating?: number | string;
+  total_jobs?: number;
+  commission_rate?: number | string;
+  status?: string;
+}
+
+interface NormalizedAgent {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  avgRating: number;
+  totalJobs: number;
+  commissionRate: number;
+  priceRange: string;
+  tags: string[];
+  operationalStatus: 'active' | 'dev';
+}
+
 function AgentsContent() {
   const dict = useDict();
   const t = dict.agentsPage;
@@ -23,6 +49,7 @@ function AgentsContent() {
   const [minRating, setMinRating] = useState(0);
   const [rankingWeights, setRankingWeights] = useState({ rating: 40, transactions: 30, commission: 15, recency: 15 });
   const [pointConfig, setPointConfig] = useState<PointConfig>(DEFAULT_POINT_CONFIG);
+  const [apiAgents, setApiAgents] = useState<ApiAgent[] | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/settings')
@@ -37,6 +64,18 @@ function AgentsContent() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (queryParam) params.set('q', queryParam);
+    if (selectedCategory) params.set('category', selectedCategory);
+    if (sortBy && sortBy !== 'ranking_score') params.set('sort', sortBy);
+
+    fetch(`/api/agents?${params.toString()}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setApiAgents(Array.isArray(d?.data) ? d.data : []))
+      .catch(() => setApiAgents([]));
+  }, [queryParam, selectedCategory, sortBy]);
 
   const SORT_OPTIONS = [
     { value: 'ranking_score', label: t.sortRecommended },
@@ -174,8 +213,29 @@ function AgentsContent() {
     },
   ];
 
+  const normalizedApiAgents: NormalizedAgent[] | null = useMemo(() => {
+    if (!apiAgents) return null;
+    return apiAgents.map((a) => ({
+      id: a.id,
+      name: a.name,
+      description: a.description_ko ?? a.description,
+      category: a.category,
+      avgRating: Number(a.avg_rating ?? 0),
+      totalJobs: Number(a.total_jobs ?? 0),
+      commissionRate: Number(a.commission_rate ?? 0),
+      priceRange: '$5',
+      tags: a.tags ?? [],
+      operationalStatus: 'active' as const,
+    }));
+  }, [apiAgents]);
+
+  const sourceAgents: NormalizedAgent[] =
+    normalizedApiAgents && normalizedApiAgents.length > 0
+      ? normalizedApiAgents
+      : MOCK_AGENTS;
+
   const filteredAgents = useMemo(() => {
-    let agents = [...MOCK_AGENTS];
+    let agents = [...sourceAgents];
 
     // Filter by category
     if (selectedCategory) {
@@ -232,7 +292,7 @@ function AgentsContent() {
 
     return agents;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory, queryParam, sortBy, minRating, rankingWeights, t]);
+  }, [sourceAgents, selectedCategory, queryParam, sortBy, minRating, rankingWeights, t]);
 
   return (
     <div className="space-y-8">
@@ -250,7 +310,11 @@ function AgentsContent() {
       </div>
 
       {/* Search */}
-      <div className="flex justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Badge variant="secondary" className="text-[10px]">AI</Badge>
+          <span>{(t as Record<string, string>).aiHint ?? '자연어로 물어보세요 — AI가 가장 알맞은 에이전트를 찾아드립니다'}</span>
+        </div>
         <Suspense fallback={<div className="h-8 w-80" />}>
           <SearchBar />
         </Suspense>

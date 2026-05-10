@@ -44,8 +44,20 @@ export default function CreateChainPage() {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('coding');
   const [steps, setSteps] = useState<StepForm[]>([defaultStep(), defaultStep()]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [isFeatured, setIsFeatured] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const addTag = () => {
+    const t = tagInput.trim();
+    if (t && !tags.includes(t) && tags.length < 10) {
+      setTags([...tags, t]);
+      setTagInput('');
+    }
+  };
+  const removeTag = (t: string) => setTags(tags.filter((x) => x !== t));
 
   const addStep = () => {
     if (steps.length >= 20) return;
@@ -89,6 +101,8 @@ export default function CreateChainPage() {
           description: description || undefined,
           category,
           steps,
+          tags: tags.length > 0 ? tags : undefined,
+          is_featured: isFeatured || undefined,
         }),
       });
       const json = await res.json();
@@ -155,6 +169,43 @@ export default function CreateChainPage() {
                 ))}
               </select>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">태그 ({tags.length}/10)</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+                  placeholder="태그 입력 후 Enter"
+                  className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
+                  maxLength={50}
+                />
+                <Button type="button" variant="outline" size="sm" onClick={addTag} disabled={tags.length >= 10}>
+                  추가
+                </Button>
+              </div>
+              {tags.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {tags.map((t) => (
+                    <Badge key={t} variant="secondary" className="cursor-pointer" onClick={() => removeTag(t)}>
+                      {t} ✕
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={isFeatured}
+                onChange={(e) => setIsFeatured(e.target.checked)}
+                className="h-4 w-4"
+              />
+              <span>추천 팩으로 표시 (관리자만 적용됨)</span>
+            </label>
           </CardContent>
         </Card>
 

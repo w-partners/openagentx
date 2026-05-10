@@ -36,6 +36,8 @@ interface ChainFlow {
   steps: { name: string; type: string }[];
   total_uses: number;
   created_at: string;
+  tags?: string[];
+  is_featured?: boolean;
 }
 
 interface ChainInstance {
@@ -53,10 +55,18 @@ interface ChainInstance {
 export default function ChainsPage() {
   const dict = useDict();
   const [flows, setFlows] = useState<ChainFlow[]>([]);
+  const [featured, setFeatured] = useState<ChainFlow[]>([]);
   const [myChains, setMyChains] = useState<ChainInstance[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [tab, setTab] = useState<'flows' | 'my'>('flows');
+
+  useEffect(() => {
+    fetch('/api/chains?featured=true&limit=6')
+      .then((r) => r.json())
+      .then((res) => { if (res.success) setFeatured(res.data ?? []); })
+      .catch(() => {});
+  }, []);
 
   const loadFlows = useCallback(() => {
     setLoading(true);
@@ -101,6 +111,64 @@ export default function ChainsPage() {
           <Button>{dict.chainsPage.createChain}</Button>
         </Link>
       </div>
+
+      {/* Featured Packs */}
+      {featured.length > 0 && tab === 'flows' && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold">✨ 추천 팩</h2>
+            <Badge variant="secondary" className="text-[10px]">Featured</Badge>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {featured.map((flow) => {
+              const steps = typeof flow.steps === 'string' ? JSON.parse(flow.steps) : flow.steps;
+              const stepsArr = Array.isArray(steps) ? steps : [];
+              return (
+                <Link key={flow.id} href={`/chains/${flow.id}`} className="block">
+                  <Card className="border-primary/30 bg-primary/5 transition-shadow hover:shadow-lg">
+                    <CardHeader>
+                      <div className="flex items-center justify-between gap-2">
+                        <Badge variant="outline">
+                          {dict.categories[flow.category as keyof typeof dict.categories] ?? flow.category}
+                        </Badge>
+                        <Badge variant="secondary" className="text-[10px]">
+                          {`프롬프트 ${stepsArr.length}개`}
+                        </Badge>
+                      </div>
+                      <CardTitle className="mt-2 text-lg">{flow.name}</CardTitle>
+                      {flow.description && (
+                        <CardDescription className="line-clamp-2">
+                          {flow.description}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex flex-wrap gap-1">
+                        {stepsArr.slice(0, 5).map((step: { name: string }, i: number) => (
+                          <span key={i} className="inline-flex items-center gap-1">
+                            {i > 0 && <span className="text-muted-foreground mx-0.5">→</span>}
+                            <span className="rounded bg-accent px-2 py-0.5 text-xs">{step.name}</span>
+                          </span>
+                        ))}
+                      </div>
+                      {flow.tags && flow.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {flow.tags.slice(0, 4).map((tag) => (
+                            <Badge key={tag} variant="outline" className="text-[10px]">{tag}</Badge>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                    <CardFooter className="text-xs text-muted-foreground">
+                      {dict.chainsPage.timesUsed.replace('{count}', String(flow.total_uses))}
+                    </CardFooter>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 border-b">

@@ -33,15 +33,45 @@ const FUNCTION_PATTERNS: Record<string, RegExp> = {
   SWITCH_MODE: /\[SWITCH_MODE:\s*(user|provider|both)\]/,
 };
 
-function buildSystemPrompt(name: string, mode: UserMode): string {
+export type ConversationIntent = 'general' | 'recommend' | 'build_agent' | 'faq';
+
+function intentSection(intent: ConversationIntent): string {
+  switch (intent) {
+    case 'recommend':
+      return `## 대화 의도: 에이전트 추천
+당신은 컨시어지 역할입니다. 사용자 니즈를 카테고리·가격·평점 기준으로 분석하여
+가장 적합한 에이전트를 추천하세요. 우선 [SEARCH_AGENTS] 함수를 활용해 후보를
+찾고, 결과를 평점·가격 비교 표 형태로 요약해 전달하세요. 투자 조언은 하지 않습니다.`;
+    case 'build_agent':
+      return `## 대화 의도: 에이전트 빌더 가이드
+사용자가 자신의 에이전트를 등록할 수 있도록 단계별로 안내하세요. 이름·설명·
+카테고리·가격을 차례로 묻고, 정보가 모이면 [CREATE_AGENT] 함수를 호출하세요.
+샘플 입력/출력도 같이 제안하면 좋습니다.`;
+    case 'faq':
+      return `## 대화 의도: FAQ
+플랫폼 사용법, 결제·환불, 포인트 충전, 작업 흐름에 대한 질문에만 답변하세요.
+함수 호출은 [CHECK_BALANCE]·[CHECK_REWARDS]·[MY_AGENTS] 외에는 자제합니다.
+범위를 벗어난 요청은 일반 모드 사용을 안내하세요.`;
+    case 'general':
+    default:
+      return '';
+  }
+}
+
+function buildSystemPrompt(
+  name: string,
+  mode: UserMode,
+  intent: ConversationIntent = 'general',
+): string {
   const modeLabel = mode === 'user' ? '사용자' : mode === 'provider' ? '제공자' : '사용자+제공자';
+  const extraIntent = intentSection(intent);
 
   return `당신은 OpenAgentX의 AI 어시스턴트입니다. 사용자의 이름은 "${name}"이고, 현재 모드는 "${modeLabel}"입니다.
 
 OpenAgentX는 AI 에이전트 마켓플레이스입니다. 사용자가 필요한 AI 서비스를 찾거나, 자신의 AI 서비스를 등록할 수 있습니다.
 
 항상 한국어로 답변하세요. 친근하고 도움되는 어조를 유지하세요.
-
+${extraIntent ? `\n${extraIntent}\n` : ''}
 ## 사용 가능한 함수
 응답에 아래 태그를 포함하면 시스템이 자동으로 실행합니다:
 
@@ -185,7 +215,11 @@ async function executeFunction(
   }
 }
 
-export async function chat(profileId: string, message: string): Promise<string> {
+export async function chat(
+  profileId: string,
+  message: string,
+  intent: ConversationIntent = 'general',
+): Promise<string> {
   const profile = await chatProfilesRepo.findById(profileId);
   if (!profile) throw new Error('프로필을 찾을 수 없습니다');
 
@@ -195,7 +229,7 @@ export async function chat(profileId: string, message: string): Promise<string> 
 
   // Build conversation history for context
   const history = await chatProfilesRepo.getHistory(profileId, 20);
-  const systemPrompt = buildSystemPrompt(profile.display_name, profile.user_mode as UserMode);
+  const systemPrompt = buildSystemPrompt(profile.display_name, profile.user_mode as UserMode, intent);
 
   const chatSession = model.startChat({
     history: history.map((m) => ({
