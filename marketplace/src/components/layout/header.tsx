@@ -47,6 +47,11 @@ export function Header({ dict, locale, isLoggedIn, userRole, enabledPages = [] }
               {dict.common.agents}
             </Link>
           )}
+          {showPage('skills') && (
+            <Link href={`${prefix}/skills`} className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0">
+              {(dict.common as Record<string, string>).skills ?? 'Skills'}
+            </Link>
+          )}
           {showPage('request-agent') && (
             <Link href={`${prefix}/request-agent`} className="text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0">
               {(dict.common as Record<string, string>).requestAgent ?? 'Build Request'}
@@ -164,6 +169,11 @@ export function Header({ dict, locale, isLoggedIn, userRole, enabledPages = [] }
             {showPage('agents') && (
               <Link href={`${prefix}/agents`} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors" onClick={() => setIsMenuOpen(false)}>
                 {dict.common.agents}
+              </Link>
+            )}
+            {showPage('skills') && (
+              <Link href={`${prefix}/skills`} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors" onClick={() => setIsMenuOpen(false)}>
+                {(dict.common as Record<string, string>).skills ?? 'Skills'}
               </Link>
             )}
             {showPage('request-agent') && (
