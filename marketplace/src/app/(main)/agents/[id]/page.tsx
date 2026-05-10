@@ -53,6 +53,11 @@ const AGENT_DATA: Record<
     ],
     reviews: [],
     operationalStatus: 'active',
+    sampleImages: [
+      'https://picsum.photos/seed/openagentx-sample-a/640/360',
+      'https://picsum.photos/seed/openagentx-sample-b/640/360',
+      'https://picsum.photos/seed/openagentx-sample-c/640/360',
+    ],
   },
   'acp-helper': {
     name: 'ACPHelper',
@@ -81,6 +86,11 @@ const AGENT_DATA: Record<
     ],
     reviews: [],
     operationalStatus: 'active',
+    sampleImages: [
+      'https://picsum.photos/seed/openagentx-sample-a/640/360',
+      'https://picsum.photos/seed/openagentx-sample-b/640/360',
+      'https://picsum.photos/seed/openagentx-sample-c/640/360',
+    ],
   },
   'code-master': {
     name: 'CodeMaster',
