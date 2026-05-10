@@ -21,6 +21,7 @@ export interface Agent {
   commission_rate: number;
   ranking_score: number;
   is_featured: boolean;
+  sample_images: string[];
   metadata: Record<string, unknown> | null;
   created_at: Date;
   updated_at: Date;
@@ -47,20 +48,22 @@ export async function createAgent(input: {
   tags?: string[];
   logo_url?: string;
   commission_rate?: number;
+  sample_images?: string[];
 }): Promise<string> {
   const slug = generateSlug(input.name) + '-' + Date.now().toString(36);
   const commissionRate = Math.min(Math.max(input.commission_rate ?? 0, 0), 50);
   const rankingScore = calculateRankingScore(commissionRate, 0, 0);
 
   const result = await query<{ id: string }>(
-    `INSERT INTO agents (owner_id, name, slug, description, description_ko, category, tags, logo_url, commission_rate, ranking_score)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `INSERT INTO agents (owner_id, name, slug, description, description_ko, category, tags, logo_url, commission_rate, ranking_score, sample_images)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      RETURNING id`,
     [
       input.owner_id, input.name, slug, input.description,
       input.description_ko ?? null, input.category,
       input.tags ?? [], input.logo_url ?? null,
       commissionRate, rankingScore,
+      input.sample_images ?? [],
     ],
   );
   return result.rows[0].id;

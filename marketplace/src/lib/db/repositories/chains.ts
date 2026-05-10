@@ -77,12 +77,16 @@ export async function createFlow(
   description: string | null,
   category: string,
   steps: ChainStep[],
+  options?: { tags?: string[]; is_featured?: boolean },
 ): Promise<string> {
   const result = await query<{ id: string }>(
-    `INSERT INTO chain_flows (creator_id, name, description, category, steps)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO chain_flows (creator_id, name, description, category, steps, tags, is_featured)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING id`,
-    [creatorId, name, description, category, JSON.stringify(steps)],
+    [
+      creatorId, name, description, category, JSON.stringify(steps),
+      options?.tags ?? [], options?.is_featured ?? false,
+    ],
   );
   return result.rows[0].id;
 }
