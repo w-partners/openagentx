@@ -32,6 +32,7 @@ interface FormData {
   services: ServiceItem[];
   commissionRate: number;
   serverUrl: string;
+  sampleImages: string[];
 }
 
 const PRICING_GUIDE: Record<string, { min: number; max: number; avg: number; examples: string[] }> = {
@@ -59,7 +60,10 @@ const INITIAL_FORM: FormData = {
   services: [{ name: '', description: '', price: '' }],
   commissionRate: 0.5,
   serverUrl: '',
+  sampleImages: [],
 };
+
+const MAX_SAMPLE_IMAGES = 5;
 
 export default function AgentRegisterPage() {
   const dict = useDict();
@@ -74,9 +78,40 @@ export default function AgentRegisterPage() {
     message?: string;
   }>({ status: null });
   const [isTesting, setIsTesting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   function updateForm(updates: Partial<FormData>) {
     setForm((prev) => ({ ...prev, ...updates }));
+  }
+
+  async function handleImageUpload(file: File) {
+    if (form.sampleImages.length >= MAX_SAMPLE_IMAGES) {
+      setUploadError(`최대 ${MAX_SAMPLE_IMAGES}장까지 업로드 가능합니다`);
+      return;
+    }
+    setIsUploading(true);
+    setUploadError(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setUploadError(json.error ?? '업로드 실패');
+        return;
+      }
+      const url = json.data?.url as string | undefined;
+      if (url) updateForm({ sampleImages: [...form.sampleImages, url] });
+    } catch {
+      setUploadError('네트워크 오류');
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  function removeSampleImage(idx: number) {
+    updateForm({ sampleImages: form.sampleImages.filter((_, i) => i !== idx) });
   }
 
   function addTag() {
@@ -167,6 +202,7 @@ export default function AgentRegisterPage() {
           tags: form.tags,
           logo_url: form.logoUrl || undefined,
           commission_rate: form.commissionRate,
+          sample_images: form.sampleImages.length > 0 ? form.sampleImages : undefined,
         }),
       });
 
@@ -260,6 +296,40 @@ export default function AgentRegisterPage() {
                 className="flex min-h-24 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 maxLength={5000}
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">결과 미리보기 이미지 ({form.sampleImages.length}/{MAX_SAMPLE_IMAGES})</label>
+              <p className="text-xs text-muted-foreground">에이전트의 결과물 예시 이미지를 최대 {MAX_SAMPLE_IMAGES}장까지 업로드하세요. 카드 썸네일과 상세 갤러리에 노출됩니다.</p>
+              {form.sampleImages.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {form.sampleImages.map((src, i) => (
+                    <div key={i} className="relative overflow-hidden rounded-md border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt={`sample ${i + 1}`} className="aspect-video w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeSampleImage(i)}
+                        className="absolute right-1 top-1 rounded bg-background/80 px-1.5 py-0.5 text-xs hover:bg-background"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                disabled={isUploading || form.sampleImages.length >= MAX_SAMPLE_IMAGES}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(file);
+                  e.target.value = '';
+                }}
+                className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90 disabled:opacity-50"
+              />
+              {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
             </div>
 
             <div className="space-y-2">

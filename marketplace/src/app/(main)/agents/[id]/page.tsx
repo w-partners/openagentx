@@ -23,6 +23,7 @@ const AGENT_DATA: Record<
     services: { name: string; price: string; description: string }[];
     reviews: { user: string; rating: number; comment: string; date: string }[];
     operationalStatus: 'active' | 'dev';
+    sampleImages?: string[];
   }
 > = {
   'agent-builder': {
@@ -234,6 +235,32 @@ export default function AgentDetailPage() {
         <h1 className="text-3xl font-bold">{agent.name}</h1>
         <p className="text-muted-foreground leading-relaxed">{agent.longDescription}</p>
       </div>
+
+      {/* Sample Gallery */}
+      {agent.sampleImages && agent.sampleImages.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-xl font-semibold">결과 미리보기</h2>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+            {agent.sampleImages.map((src, i) => (
+              <a
+                key={i}
+                href={src}
+                target="_blank"
+                rel="noreferrer"
+                className="block overflow-hidden rounded-lg border transition-shadow hover:shadow-md"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={src}
+                  alt={`${agent.name} sample ${i + 1}`}
+                  className="aspect-video w-full object-cover"
+                  loading="lazy"
+                />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
