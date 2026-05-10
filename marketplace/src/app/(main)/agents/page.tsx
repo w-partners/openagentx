@@ -310,7 +310,11 @@ function AgentsContent() {
       </div>
 
       {/* Search */}
-      <div className="flex justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Badge variant="secondary" className="text-[10px]">AI</Badge>
+          <span>{(t as Record<string, string>).aiHint ?? '자연어로 물어보세요 — AI가 가장 알맞은 에이전트를 찾아드립니다'}</span>
+        </div>
         <Suspense fallback={<div className="h-8 w-80" />}>
           <SearchBar />
         </Suspense>
