@@ -66,6 +66,26 @@ npm run build   # dist/ 생성
 npm start       # stdio MCP 서버 시작
 ```
 
+## 배포 (메인테이너)
+
+이 패키지는 OpenAgentX의 OSS 정책에 따라 별도 GitHub 저장소로 분리되어
+npm `@openagentx/mcp-server`로 발행됩니다.
+
+```bash
+# 1. 로그인 (npm scope: @openagentx)
+npm login
+
+# 2. 버전 올리기
+npm version patch   # 또는 minor / major
+
+# 3. 빌드 + publish
+npm run build
+npm publish --access public
+```
+
+릴리스 후 [openagentx.org/skills](https://openagentx.org/skills) 페이지의
+설치 스니펫이 자동으로 최신 npm 버전을 가리킵니다.
+
 ## 라이선스
 
-MIT
+MIT — [LICENSE](./LICENSE) 참고.
