@@ -1,136 +1,61 @@
-const API_URL = process.env.OPENAGENTX_API_URL || 'https://openagentx.org';
+const API_BASE = process.env.OPENAGENTX_API_URL || 'https://openagentx.org';
+const MCP_ENDPOINT = `${API_BASE}/api/mcp`;
 
-export interface AgentInfo {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  pricePoints: number;
-  tags: string[];
-  capabilities: string[];
+export interface JsonRpcRequest {
+  jsonrpc: '2.0';
+  method: string;
+  params?: Record<string, unknown>;
+  id: string | number;
 }
 
-export interface ExecuteResult {
-  success: boolean;
-  data?: {
-    jobId: string;
-    status: string;
-    result?: string;
-    usedPoints?: number;
-    error?: string;
-  };
-  error?: string;
-}
-
-export interface AgentsResponse {
-  success: boolean;
-  data?: AgentInfo[];
-  meta?: { total: number };
-  error?: string;
+export interface JsonRpcResponse {
+  jsonrpc: '2.0';
+  result?: unknown;
+  error?: { code: number; message: string };
+  id: string | number | null;
 }
 
 export class OpenAgentXClient {
   private apiKey: string;
-  private baseUrl: string;
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
-    this.baseUrl = API_URL;
   }
 
-  async listAgents(): Promise<AgentsResponse> {
-    const res = await fetch(`${this.baseUrl}/api/v1/agents`, {
-      headers: { Authorization: `Bearer ${this.apiKey}` },
-    });
-    return res.json() as Promise<AgentsResponse>;
-  }
+  async call(method: string, params?: Record<string, unknown>): Promise<JsonRpcResponse> {
+    const body: JsonRpcRequest = {
+      jsonrpc: '2.0',
+      method,
+      params,
+      id: Date.now(),
+    };
 
-  async executeAgent(agentId: string, input: string): Promise<ExecuteResult> {
-    const res = await fetch(`${this.baseUrl}/api/v1/agents/execute`, {
+    const res = await fetch(MCP_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
+        'X-API-Key': this.apiKey,
       },
-      body: JSON.stringify({ agentId, input }),
+      body: JSON.stringify(body),
     });
-    return res.json() as Promise<ExecuteResult>;
+
+    return res.json() as Promise<JsonRpcResponse>;
   }
 
-  async getResult(jobId: string): Promise<ExecuteResult> {
-    const res = await fetch(`${this.baseUrl}/api/v1/agents/result/${jobId}`, {
-      headers: { Authorization: `Bearer ${this.apiKey}` },
-    });
-    return res.json() as Promise<ExecuteResult>;
+  async listTools(): Promise<unknown[]> {
+    const response = await this.call('tools/list');
+    if (response.error) {
+      throw new Error(`tools/list 실패: ${response.error.message}`);
+    }
+    const result = response.result as { tools?: unknown[] } | undefined;
+    return result?.tools ?? [];
   }
 
-  async createAgent(data: {
-    name: string;
-    description: string;
-    systemPrompt: string;
-    category?: string;
-    pricePoints?: number;
-    tags?: string[];
-    capabilities?: string[];
-    sampleInput?: string;
-    sampleOutput?: string;
-  }): Promise<ApiResponse> {
-    const res = await fetch(`${this.baseUrl}/api/v1/agents/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify(data),
-    });
-    return res.json() as Promise<ApiResponse>;
+  async callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
+    const response = await this.call('tools/call', { name, arguments: args });
+    if (response.error) {
+      throw new Error(response.error.message);
+    }
+    return response.result;
   }
-
-  async generateAgent(data: {
-    description: string;
-    githubRepo?: string;
-    referenceUrls?: string[];
-  }): Promise<ApiResponse> {
-    const res = await fetch(`${this.baseUrl}/api/v1/agents/generate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify(data),
-    });
-    return res.json() as Promise<ApiResponse>;
-  }
-
-  async myAgents(): Promise<ApiResponse> {
-    const res = await fetch(`${this.baseUrl}/api/v1/agents/my`, {
-      headers: { Authorization: `Bearer ${this.apiKey}` },
-    });
-    return res.json() as Promise<ApiResponse>;
-  }
-
-  async checkBalance(): Promise<ApiResponse> {
-    const res = await fetch(`${this.baseUrl}/api/v1/balance`, {
-      headers: { Authorization: `Bearer ${this.apiKey}` },
-    });
-    return res.json() as Promise<ApiResponse>;
-  }
-
-  async redeemCode(code: string): Promise<ApiResponse> {
-    const res = await fetch(`${this.baseUrl}/api/v1/charge/redeem`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify({ code }),
-    });
-    return res.json() as Promise<ApiResponse>;
-  }
-}
-
-export interface ApiResponse {
-  success: boolean;
-  data?: Record<string, unknown>;
-  error?: string;
 }
