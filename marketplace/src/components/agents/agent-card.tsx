@@ -20,15 +20,28 @@ interface AgentCardProps {
   /** Operational status: 'active' = working agent, 'dev' = in development */
   operationalStatus?: 'active' | 'dev';
   operationalLabel?: string;
+  /** Result preview images (first one shown as thumbnail) */
+  sampleImages?: string[];
 }
 
 export function AgentCard({
   id, name, description, category, avgRating, totalJobs, commissionRate, priceRange, priceRangePoints, tags,
   completedLabel, commissionLabel, showCommission, operationalStatus, operationalLabel,
+  sampleImages,
 }: AgentCardProps) {
+  const thumbnail = sampleImages?.[0];
   return (
     <Link href={`/agents/${id}`}>
-      <Card className="h-full transition-shadow hover:shadow-md cursor-pointer">
+      <Card className="h-full overflow-hidden transition-shadow hover:shadow-md cursor-pointer">
+        {thumbnail && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={thumbnail}
+            alt={name}
+            className="aspect-video w-full object-cover"
+            loading="lazy"
+          />
+        )}
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
