@@ -1,9 +1,19 @@
-# OpenAgentX — 한국 AI 에이전트 마켓플레이스 PRD
+# OpenAgentX — 한국 AI 에이전트 마켓플레이스 PRD (ARCHIVED v2.2)
 
-**버전**: 2.2
-**작성일**: 2026-03-21
-**기반**: virtuals-acp-prd.md v1.0 + GitHub 리서치 + 코드 규칙 + 멀티프로토콜 전략
-**상태**: Draft
+> ⚠️ **ARCHIVED — 정본 아님**
+> **본 문서는 2026-05-17부로 archived.**
+> **정본 PRD**: 워크스페이스 루트의 [`docs/PRD-OpenAgentX.md` v3.0](../../../docs/PRD-OpenAgentX.md)
+> 본 v2.2는 historical reference. 충돌 시 v3.0이 우선.
+
+---
+
+**원본 정보**:
+- **버전**: 2.2 (ARCHIVED)
+- **작성일**: 2026-03-21
+- **아카이브일**: 2026-05-17
+- **기반**: virtuals-acp-prd.md v1.0 + GitHub 리서치 + 코드 규칙 + 멀티프로토콜 전략
+- **상태**: Archived (was Draft)
+- **대체 문서**: PRD-OpenAgentX.md v3.0 (17개 결정 통합, Beta/GA/Scale 단계, 거래 모델 4종 통합 등)
 
 ---
 
