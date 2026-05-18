@@ -222,17 +222,16 @@ CREATE INDEX IF NOT EXISTS idx_bounties_expires ON bounties(expires_at) WHERE st
 -- 바운티 후보
 -- ============================================================
 CREATE TABLE IF NOT EXISTS bounty_candidates (
-    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     bounty_id       UUID NOT NULL REFERENCES bounties(id) ON DELETE CASCADE,
-    agent_id        UUID NOT NULL REFERENCES agents(id),
-    match_score     DECIMAL(5, 2) NOT NULL,
-    status          VARCHAR(20) NOT NULL DEFAULT 'pending',
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    agent_id        UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    rank            INTEGER NOT NULL,
+    score           NUMERIC(5, 3) NOT NULL,
+    reasons         JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (bounty_id, agent_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_bcandidates_bounty ON bounty_candidates(bounty_id);
-CREATE INDEX IF NOT EXISTS idx_bcandidates_agent ON bounty_candidates(agent_id);
-CREATE INDEX IF NOT EXISTS idx_bcandidates_score ON bounty_candidates(match_score DESC);
+CREATE INDEX IF NOT EXISTS idx_bounty_candidates_rank ON bounty_candidates(bounty_id, rank);
 
 -- ============================================================
 -- 구독
@@ -298,19 +297,28 @@ CREATE INDEX IF NOT EXISTS idx_concierge_status ON concierge_conversations(statu
 -- ============================================================
 CREATE TABLE IF NOT EXISTS disputes (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    job_id          UUID NOT NULL REFERENCES marketplace_jobs(id),
-    reporter_id     UUID NOT NULL REFERENCES users(id),
+    job_id          UUID NOT NULL REFERENCES marketplace_jobs(id) ON DELETE CASCADE,
+    claimant_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     reason          TEXT NOT NULL,
-    status          VARCHAR(20) NOT NULL DEFAULT 'open',
+    evidence_urls   JSONB NOT NULL DEFAULT '[]'::jsonb,
+    status          TEXT NOT NULL DEFAULT 'open'
+                    CHECK (status IN ('open', 'under_review', 'resolved', 'rejected')),
     resolution      TEXT,
     resolved_by     UUID REFERENCES users(id),
+    refund_amount   NUMERIC(18, 6),
+    refund_currency TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    resolved_at     TIMESTAMPTZ
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_disputes_job ON disputes(job_id);
-CREATE INDEX IF NOT EXISTS idx_disputes_reporter ON disputes(reporter_id);
-CREATE INDEX IF NOT EXISTS idx_disputes_status ON disputes(status);
+CREATE INDEX IF NOT EXISTS idx_disputes_claimant ON disputes(claimant_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_disputes_status ON disputes(status, created_at DESC);
+
+-- 중복 open/under_review 분쟁 차단 (1 job당 최대 1개 활성)
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_disputes_active_per_job
+    ON disputes(job_id)
+    WHERE status IN ('open', 'under_review');
 
 -- ============================================================
 -- 에이전트 프로토콜/결제 설정
@@ -381,4 +389,91 @@ CREATE TRIGGER trg_concierge_updated
 -- agent_protocol_settings
 CREATE TRIGGER trg_agent_protocol_updated
     BEFORE UPDATE ON agent_protocol_settings
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ============================================================
+-- 체인 플로우 (PRD §4 결정 21 — Chain 거래 모델)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS chain_flows (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    creator_id      UUID REFERENCES users(id) ON DELETE SET NULL,
+    name            TEXT NOT NULL,
+    description     TEXT,
+    category        TEXT,
+    steps           JSONB NOT NULL DEFAULT '[]'::jsonb,
+    tags            TEXT[] NOT NULL DEFAULT '{}',
+    is_featured     BOOLEAN NOT NULL DEFAULT FALSE,
+    is_public       BOOLEAN NOT NULL DEFAULT FALSE,
+    total_uses      INTEGER NOT NULL DEFAULT 0,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_chain_flows_creator ON chain_flows(creator_id);
+CREATE INDEX IF NOT EXISTS idx_chain_flows_category ON chain_flows(category);
+CREATE INDEX IF NOT EXISTS idx_chain_flows_featured ON chain_flows(is_featured) WHERE is_featured = TRUE;
+CREATE INDEX IF NOT EXISTS idx_chain_flows_tags ON chain_flows USING GIN(tags);
+
+-- ============================================================
+-- 체인 인스턴스 (실행 단위)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS chain_instances (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    flow_id         UUID NOT NULL REFERENCES chain_flows(id) ON DELETE CASCADE,
+    requester_id    UUID REFERENCES users(id) ON DELETE SET NULL,
+    input_data      JSONB NOT NULL DEFAULT '{}'::jsonb,
+    current_step    INTEGER NOT NULL DEFAULT 0,
+    status          TEXT NOT NULL DEFAULT 'running'
+                    CHECK (status IN ('running', 'completed', 'failed')),
+    step_results    JSONB NOT NULL DEFAULT '[]'::jsonb,
+    total_cost      NUMERIC(18, 6) NOT NULL DEFAULT 0,
+    error_message   TEXT,
+    started_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    completed_at    TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_chain_instances_flow ON chain_instances(flow_id);
+CREATE INDEX IF NOT EXISTS idx_chain_instances_requester ON chain_instances(requester_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chain_instances_status ON chain_instances(status, started_at DESC);
+
+-- ============================================================
+-- OG 빌더 모집 (PRD §4.14 결정 27 — Beta 한정 100명)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS og_builder_enrollments (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email           TEXT UNIQUE NOT NULL,
+    display_name    TEXT NOT NULL,
+    portfolio_url   TEXT,
+    expertise       JSONB NOT NULL DEFAULT '[]'::jsonb,
+    bio             TEXT NOT NULL,
+    status          TEXT NOT NULL DEFAULT 'pending'
+                    CHECK (status IN ('pending', 'approved', 'rejected', 'withdrawn')),
+    invited_user_id UUID REFERENCES users(id),
+    reviewer_id     UUID REFERENCES users(id),
+    review_note     TEXT,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    approved_at     TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_og_enroll_status ON og_builder_enrollments(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_og_enroll_email ON og_builder_enrollments(email);
+
+-- ============================================================
+-- updated_at 트리거 (Beta 신규 테이블)
+-- ============================================================
+
+-- disputes
+CREATE TRIGGER trg_disputes_updated
+    BEFORE UPDATE ON disputes
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- chain_flows
+CREATE TRIGGER trg_chain_flows_updated
+    BEFORE UPDATE ON chain_flows
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- og_builder_enrollments
+CREATE TRIGGER trg_og_enroll_updated
+    BEFORE UPDATE ON og_builder_enrollments
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
