@@ -19,6 +19,7 @@ import AgentsManageSection from './agents-section';
 import PaymentsSection from './payments-section';
 import TopupManageSection from './topup-section';
 import FeedbackSection from './feedback-section';
+import DisputesSection from './disputes-section';
 import { useDict } from '@/i18n/client';
 
 
@@ -113,6 +114,7 @@ export default function AdminDashboardPage() {
           <TabsTrigger value="currency">{tabs.currency ?? 'Currency'}</TabsTrigger>
           <TabsTrigger value="gpt">GPT</TabsTrigger>
           <TabsTrigger value="feedback">피드백</TabsTrigger>
+          <TabsTrigger value="disputes">분쟁</TabsTrigger>
           <TabsTrigger value="settings">{tabs.settings}</TabsTrigger>
         </TabsList>
 
@@ -151,6 +153,9 @@ export default function AdminDashboardPage() {
         </TabsContent>
         <TabsContent value="gpt">
           <GPTSection />
+        </TabsContent>
+        <TabsContent value="disputes">
+          <DisputesSection />
         </TabsContent>
         <TabsContent value="feedback">
           <FeedbackSection />
