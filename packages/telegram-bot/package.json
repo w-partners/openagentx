@@ -1,0 +1,39 @@
+{
+  "name": "@openagentx/telegram-bot",
+  "version": "0.1.0",
+  "description": "Reusable Telegram Bot API toolkit with command routing, webhook/long-polling helpers, and notification templates",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./bot": {
+      "types": "./dist/bot.d.ts",
+      "import": "./dist/bot.js"
+    },
+    "./notifications": {
+      "types": "./dist/notifications.d.ts",
+      "import": "./dist/notifications.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test --import tsx tests/*.test.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["telegram", "telegram-bot", "bot-api", "openagentx", "notifications"],
+  "license": "MIT",
+  "author": "OpenAgentX Contributors",
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.7.0"
+  }
+}
