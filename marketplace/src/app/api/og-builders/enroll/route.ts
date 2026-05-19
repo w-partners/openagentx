@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 모집 정원 체크
-  const countRows = await query<{ approved: number; pending: number }>(
+  const { rows: countRows } = await query<{ approved: number; pending: number }>(
     `SELECT
        COUNT(*) FILTER (WHERE status = 'approved')::int AS approved,
        COUNT(*) FILTER (WHERE status = 'pending')::int AS pending
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 중복 신청 차단
-  const existing = await query<{ id: string; status: string }>(
+  const { rows: existing } = await query<{ id: string; status: string }>(
     `SELECT id, status FROM og_builder_enrollments WHERE email = $1 LIMIT 1`,
     [email],
   );
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 신청 row 생성 (pending)
-  const inserted = await query<{ id: string }>(
+  const { rows: inserted } = await query<{ id: string }>(
     `INSERT INTO og_builder_enrollments
         (email, display_name, portfolio_url, expertise, bio, status, created_at)
      VALUES ($1, $2, $3, $4, $5, 'pending', NOW())
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  const rows = await query<{ approved: number; pending: number }>(
+  const { rows } = await query<{ approved: number; pending: number }>(
     `SELECT
        COUNT(*) FILTER (WHERE status = 'approved')::int AS approved,
        COUNT(*) FILTER (WHERE status = 'pending')::int AS pending

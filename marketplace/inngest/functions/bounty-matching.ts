@@ -52,15 +52,15 @@ export const bountyMatching = inngest.createFunction(
     // 1) 처리 대상 bounty 조회
     const bounties = await step.run('find-open-bounties', async () => {
       if (onlyBountyId) {
-        const rows = await query<OpenBounty>(
+        const result = await query<OpenBounty>(
           `SELECT id, category, tags, budget_min, budget_max, currency, created_at
              FROM bounties
             WHERE id = $1 AND status = 'open'`,
           [onlyBountyId],
         );
-        return rows;
+        return result.rows;
       }
-      const rows = await query<OpenBounty>(
+      const result = await query<OpenBounty>(
         `SELECT id, category, tags, budget_min, budget_max, currency, created_at
            FROM bounties
           WHERE status = 'open'
@@ -68,7 +68,7 @@ export const bountyMatching = inngest.createFunction(
           ORDER BY created_at ASC
           LIMIT 50`,
       );
-      return rows;
+      return result.rows;
     });
 
     let matched = 0;
@@ -129,7 +129,7 @@ export const bountyMatching = inngest.createFunction(
  */
 async function matchCandidates(bounty: OpenBounty): Promise<AgentCandidate[]> {
   // 카테고리 평균 가격
-  const avgRows = await query<{ avg_price: number }>(
+  const { rows: avgRows } = await query<{ avg_price: number }>(
     `SELECT COALESCE(AVG(price_avg), 0)::float AS avg_price
        FROM agents
       WHERE category = $1 AND status = 'active'`,
@@ -139,7 +139,7 @@ async function matchCandidates(bounty: OpenBounty): Promise<AgentCandidate[]> {
 
   // 1차 필터: 카테고리 + 태그 교집합
   const tagsArr = bounty.tags ?? [];
-  const rows = await query<{
+  const { rows } = await query<{
     id: string;
     rating: number;
     success_rate: number;

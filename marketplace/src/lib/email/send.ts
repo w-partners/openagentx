@@ -40,4 +40,17 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
 
 // Common alias used by some routes
 export const send = sendEmail;
+
+/**
+ * sendMail — disputes/route.ts 등이 import { sendMail } 패턴으로 호출.
+ * 가벼운 wrapper: { to, subject, text } → sendEmail({to, subject, text}).
+ */
+export async function sendMail(args: {
+  to: string;
+  subject: string;
+  text: string;
+}): Promise<void> {
+  await sendEmail({ to: args.to, subject: args.subject, text: args.text });
+}
+
 export default sendEmail;

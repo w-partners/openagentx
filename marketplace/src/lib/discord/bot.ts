@@ -50,12 +50,13 @@ interface DiscordResponse {
 
 // --- Signature verification (Ed25519) ---
 
-function hexToBytes(hex: string): Uint8Array {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+function hexToBytes(hex: string): ArrayBuffer {
+  const buffer = new ArrayBuffer(hex.length / 2);
+  const view = new Uint8Array(buffer);
+  for (let i = 0; i < view.length; i++) {
+    view[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
   }
-  return bytes;
+  return buffer;
 }
 
 export async function verifyDiscordSignature(

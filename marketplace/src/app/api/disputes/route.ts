@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
   }
 
   // job 소유자 확인 (구매자 또는 메이커가 신청 가능)
-  const jobs = await query<{
+  const { rows: jobs } = await query<{
     id: string;
     buyer_id: string;
     maker_id: string;
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 중복 분쟁 차단 (open / under_review 상태가 이미 있으면)
-  const existing = await query<{ id: string; status: string }>(
+  const { rows: existing } = await query<{ id: string; status: string }>(
     `SELECT id, status FROM disputes
       WHERE job_id = $1 AND status IN ('open', 'under_review')
       LIMIT 1`,
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     ? body.evidence_urls.filter((u) => typeof u === 'string' && /^https?:\/\//.test(u)).slice(0, 10)
     : [];
 
-  const inserted = await query<{ id: string }>(
+  const { rows: inserted } = await query<{ id: string }>(
     `INSERT INTO disputes (job_id, claimant_id, reason, evidence_urls, status, created_at)
      VALUES ($1, $2, $3, $4, 'open', NOW())
      RETURNING id`,
@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
   const status = url.searchParams.get('status'); // open|under_review|resolved|rejected
   const validStatus = ['open', 'under_review', 'resolved', 'rejected'];
 
-  const rows = await query<{
+  const { rows } = await query<{
     id: string;
     job_id: string;
     reason: string;

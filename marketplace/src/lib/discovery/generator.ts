@@ -12,7 +12,6 @@
  */
 
 import type {
-  AgentDescriptor,
   AgentSkillDescriptor,
   DiscoverySource,
 } from './types';
