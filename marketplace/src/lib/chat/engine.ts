@@ -1,23 +1,6 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { generateResponse } from '@/lib/ai/fallback-chain';
 import * as chatProfilesRepo from '@/lib/db/repositories/chat-profiles';
 import type { ChatMessage, UserMode } from '@/lib/db/repositories/chat-profiles';
-
-// Server-side Gemini keys (from env, with rotation)
-const SERVER_GEMINI_KEYS: string[] = (process.env.GOOGLE_AI_API_KEYS ?? process.env.GOOGLE_AI_API_KEY ?? '')
-  .split(',')
-  .map((k) => k.trim())
-  .filter(Boolean);
-
-let serverKeyIndex = 0;
-
-function getServerGeminiKey(): string {
-  if (SERVER_GEMINI_KEYS.length === 0) {
-    throw new Error('No server Gemini API keys configured (GOOGLE_AI_API_KEYS)');
-  }
-  const key = SERVER_GEMINI_KEYS[serverKeyIndex % SERVER_GEMINI_KEYS.length];
-  serverKeyIndex++;
-  return key;
-}
 
 // Function call patterns detected in AI response
 const FUNCTION_PATTERNS: Record<string, RegExp> = {
@@ -223,25 +206,19 @@ export async function chat(
   const profile = await chatProfilesRepo.findById(profileId);
   if (!profile) throw new Error('프로필을 찾을 수 없습니다');
 
-  const geminiKey = getServerGeminiKey();
-  const genAI = new GoogleGenerativeAI(geminiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
   // Build conversation history for context
   const history = await chatProfilesRepo.getHistory(profileId, 20);
-  const systemPrompt = buildSystemPrompt(profile.display_name, profile.user_mode as UserMode, intent);
+  const baseSystem = buildSystemPrompt(profile.display_name, profile.user_mode as UserMode, intent);
+  const historyText = history
+    .map((m) => `[${m.role === 'assistant' ? '어시스턴트' : '사용자'}] ${m.content}`)
+    .join('\n');
+  const systemPrompt = historyText
+    ? `${baseSystem}\n\n## 이전 대화 (참고)\n${historyText}`
+    : baseSystem;
 
-  const chatSession = model.startChat({
-    history: history.map((m) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    })),
-    systemInstruction: systemPrompt,
-  });
-
-  // First AI call
-  const result = await chatSession.sendMessage(message);
-  let response = result.response.text();
+  // First AI call — Claude → Gemini → Ollama → Static fallback chain
+  const first = await generateResponse({ systemPrompt, userMessage: message });
+  let response = first.text;
 
   // Check for function calls in response
   for (const [fnName, pattern] of Object.entries(FUNCTION_PATTERNS)) {
@@ -251,16 +228,14 @@ export async function chat(
       const fnResult = await executeFunction(fnName, args, profileId, profile.user_id);
 
       if (fnResult) {
-        // Remove the function tag from response
         response = response.replace(pattern, '').trim();
-
-        // Feed function result back to AI for natural language response
-        const followUp = await chatSession.sendMessage(
-          `[시스템] 함수 실행 결과:\n${fnResult}\n\n위 결과를 사용자에게 자연스럽게 전달해주세요.`
-        );
-        response = followUp.response.text();
+        const followUp = await generateResponse({
+          systemPrompt,
+          userMessage: `${message}\n\n[시스템] 함수 실행 결과:\n${fnResult}\n\n위 결과를 사용자에게 자연스럽게 전달해주세요.`,
+        });
+        response = followUp.text;
       }
-      break; // Process one function at a time
+      break;
     }
   }
 
