@@ -1,6 +1,6 @@
 {
   "name": "cryptointel",
-  "version": "2.1.0.0",
+  "version": "2.1.1.0",
   "description": "Korean AI Agent Marketplace - Phase 1: ACP Seller Agent",
   "type": "module",
   "main": "dist/index.js",
