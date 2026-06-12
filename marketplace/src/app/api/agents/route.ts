@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import * as agentsRepo from '@/lib/db/repositories/agents';
 import { hybridSearch } from '@/lib/search/hybrid';
+import { mapAgentsToXgram } from '@/lib/adapters/openxgram-agent';
 import { z } from 'zod';
 import { apiJson, apiCatchError, requireAuth, AuthError, parsePagination } from '@/lib/utils/api-response';
 
@@ -25,7 +26,11 @@ export async function GET(request: NextRequest) {
 
   if (q) {
     const results = await hybridSearch({ q, category, limit, offset });
-    return apiJson({ data: results.agents, meta: { total: results.total, limit, offset } });
+    // (a) OpenXgram Rust client contract: { agents: [Agent] } with snake_case
+    // maker_id/rating/rating_count + services[]. Existing { data, meta } consumers
+    // are preserved; `agents` is added alongside.
+    const agents = await mapAgentsToXgram(results.agents);
+    return apiJson({ agents, data: results.agents, meta: { total: results.total, limit, offset } });
   }
 
   const results = await agentsRepo.findAll({
