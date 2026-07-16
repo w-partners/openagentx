@@ -44,6 +44,7 @@ export default function PointsSection() {
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [type, setType] = useState<'grant' | 'revoke'>('grant');
+  const [force, setForce] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // Fetch all users for the selector
@@ -112,7 +113,7 @@ export default function PointsSection() {
       const res = await fetch('/api/admin/points', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, amount: amt, type, reason }),
+        body: JSON.stringify({ userId, amount: amt, type, reason, force: type === 'revoke' ? force : undefined }),
       });
       const d = await res.json();
       if (res.ok) {
@@ -209,6 +210,16 @@ export default function PointsSection() {
               <option value="grant">지급</option>
               <option value="revoke">차감</option>
             </select>
+            {type === 'revoke' && (
+              <label className="flex items-center gap-1 h-9 px-2 text-xs text-muted-foreground cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={force}
+                  onChange={(e) => setForce(e.target.checked)}
+                />
+                음수 잔액 허용
+              </label>
+            )}
           </div>
           <div className="flex gap-2">
             <Input

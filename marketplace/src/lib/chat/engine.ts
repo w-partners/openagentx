@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as chatProfilesRepo from '@/lib/db/repositories/chat-profiles';
 import type { ChatMessage, UserMode } from '@/lib/db/repositories/chat-profiles';
+import { query } from '@/lib/db/pool';
 
 // Server-side Gemini keys (from env, with rotation)
 const SERVER_GEMINI_KEYS: string[] = (process.env.GOOGLE_AI_API_KEYS ?? process.env.GOOGLE_AI_API_KEY ?? '')
@@ -185,7 +186,94 @@ async function executeFunction(
   }
 }
 
-export async function chat(profileId: string, message: string): Promise<string> {
+/**
+ * 슬러그(또는 ID) 로 등록된 에이전트의 system_prompt + 이름을 가져온다.
+ * - DB 의 agents.metadata.system_prompt 우선
+ * - 없으면 description 폴백
+ * - 카탈로그(시드)도 폴백
+ */
+const CATALOG_PROMPTS: Record<string, { name: string; system_prompt: string }> = {
+  'agent-builder': {
+    name: 'AgentBuilder',
+    system_prompt: `당신은 AgentBuilder 입니다. 사용자가 제공하는 자료(GitHub URL, 문서, 설명)를 분석해 새 AI 에이전트의 설계안을 만들어내는 전문 에이전트입니다.
+
+대화 시 사용자의 입력이 부족하면 추가 자료(URL/텍스트/설명)를 요청하세요.
+사용자가 충분한 자료를 제공하면 다음 JSON 스키마를 출력합니다(마크다운 코드 펜스 없이 순수 JSON):
+{
+  "agent_name": "...",
+  "agent_description": "...",
+  "agent_description_ko": "...",
+  "category": "coding|data_analysis|content_creation|...",
+  "tags": ["..."],
+  "system_prompt": "...",
+  "services": [{"name":"...","description":"...","price": <points>}],
+  "estimated_complexity": "simple|moderate|complex",
+  "build_notes": "..."
+}
+일반 대화 시에는 친근한 한국어로 응답하세요.`,
+  },
+  'acp-helper': {
+    name: 'ACPHelper',
+    system_prompt: `당신은 ACPHelper 입니다. ChatGPT 커머스(ACP) 통합을 돕는 전문 에이전트입니다. 한국어로 친절히 응답하세요.`,
+  },
+};
+
+async function loadAgentPrompt(
+  slug: string,
+): Promise<{ name: string; system_prompt: string } | null> {
+  try {
+    const rs = await query<{ name: string; metadata: Record<string, unknown> | null; description: string | null }>(
+      `SELECT name, metadata, description FROM agents WHERE slug = $1 OR id::text = $1 LIMIT 1`,
+      [slug],
+    );
+    const row = rs.rows[0];
+    if (row) {
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      const sp = typeof meta.system_prompt === 'string' && meta.system_prompt.trim().length > 0
+        ? meta.system_prompt
+        : (row.description ?? `당신은 ${row.name} 입니다.`);
+      return { name: row.name, system_prompt: sp };
+    }
+  } catch {
+    // ignore
+  }
+  return CATALOG_PROMPTS[slug] ?? null;
+}
+
+/**
+ * 프롬프트 라이브러리에서 system_prompt 로드.
+ */
+async function loadPromptSystemPrompt(
+  slug: string,
+): Promise<{ name: string; system_prompt: string } | null> {
+  try {
+    const r = await query<{ title: string; title_ko: string | null; system_prompt: string }>(
+      `SELECT title, title_ko, system_prompt FROM prompts
+       WHERE slug = $1 AND status = 'active' AND is_public = TRUE
+       LIMIT 1`,
+      [slug],
+    );
+    const row = r.rows[0];
+    if (!row) return null;
+    return {
+      name: row.title_ko ?? row.title,
+      system_prompt: row.system_prompt,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export interface ChatOptions {
+  agentSlug?: string;
+  promptSlug?: string;
+}
+
+export async function chat(
+  profileId: string,
+  message: string,
+  options: ChatOptions = {},
+): Promise<string> {
   const profile = await chatProfilesRepo.findById(profileId);
   if (!profile) throw new Error('프로필을 찾을 수 없습니다');
 
@@ -195,7 +283,26 @@ export async function chat(profileId: string, message: string): Promise<string> 
 
   // Build conversation history for context
   const history = await chatProfilesRepo.getHistory(profileId, 20);
-  const systemPrompt = buildSystemPrompt(profile.display_name, profile.user_mode as UserMode);
+
+  // promptSlug 가 우선, 없으면 agentSlug, 둘 다 없으면 일반 어시스턴트
+  let systemPrompt: string;
+  if (options.promptSlug) {
+    const promptPrompt = await loadPromptSystemPrompt(options.promptSlug);
+    if (promptPrompt) {
+      systemPrompt = `${promptPrompt.system_prompt}\n\n---\n사용자의 이름은 "${profile.display_name}"입니다.`;
+    } else {
+      systemPrompt = buildSystemPrompt(profile.display_name, profile.user_mode as UserMode);
+    }
+  } else if (options.agentSlug) {
+    const agentPrompt = await loadAgentPrompt(options.agentSlug);
+    if (agentPrompt) {
+      systemPrompt = `${agentPrompt.system_prompt}\n\n---\n사용자의 이름은 "${profile.display_name}"입니다. 친근하게 응답하세요.`;
+    } else {
+      systemPrompt = buildSystemPrompt(profile.display_name, profile.user_mode as UserMode);
+    }
+  } else {
+    systemPrompt = buildSystemPrompt(profile.display_name, profile.user_mode as UserMode);
+  }
 
   const chatSession = model.startChat({
     history: history.map((m) => ({
@@ -209,8 +316,8 @@ export async function chat(profileId: string, message: string): Promise<string> 
   const result = await chatSession.sendMessage(message);
   let response = result.response.text();
 
-  // Check for function calls in response
-  for (const [fnName, pattern] of Object.entries(FUNCTION_PATTERNS)) {
+  // Check for function calls in response (skip when chatting with a specific agent or prompt)
+  if (!options.agentSlug && !options.promptSlug) for (const [fnName, pattern] of Object.entries(FUNCTION_PATTERNS)) {
     const match = response.match(pattern);
     if (match) {
       const args = match.slice(1);

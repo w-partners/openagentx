@@ -9,6 +9,8 @@ const patchSchema = z.object({
   admin_response: z.string().min(1).max(5000).optional(),
 });
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // GET /api/platform-feedback/[id]
 export async function GET(
   request: NextRequest,
@@ -16,6 +18,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    if (!UUID_RE.test(id)) return apiJson({ error: 'Invalid feedback id' }, 400);
     const user = await requireUser(request);
     const item = await feedbackRepo.getFeedback(id, user?.userId ?? null);
     if (!item) return apiJson({ error: '피드백을 찾을 수 없습니다' }, 404);

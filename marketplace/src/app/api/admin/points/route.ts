@@ -65,11 +65,12 @@ export async function POST(request: NextRequest) {
   try {
     const adminId = await requireAdmin(request);
     const body = await request.json();
-    const { userId, amount, type, reason } = body as {
+    const { userId, amount, type, reason, force } = body as {
       userId?: string;
       amount?: number;
       type?: string;
       reason?: string;
+      force?: boolean;
     };
 
     if (!userId) return apiError('userId가 필요합니다');
@@ -86,10 +87,10 @@ export async function POST(request: NextRequest) {
     await transaction(async (client: PoolClient) => {
       // Update user balance
       if (type === 'revoke') {
-        const result = await client.query(
-          'UPDATE users SET balance_usdc = balance_usdc - $1 WHERE id = $2 AND balance_usdc >= $1 RETURNING id',
-          [amount, userId],
-        );
+        const sql = force
+          ? 'UPDATE users SET balance_usdc = balance_usdc - $1 WHERE id = $2 RETURNING id'
+          : 'UPDATE users SET balance_usdc = balance_usdc - $1 WHERE id = $2 AND balance_usdc >= $1 RETURNING id';
+        const result = await client.query(sql, [amount, userId]);
         if (result.rowCount === 0) {
           throw new Error('잔액이 부족합니다');
         }

@@ -12,9 +12,22 @@ interface Message {
   content: string;
 }
 
+interface AgentInfo {
+  slug: string;
+  name: string;
+  description?: string;
+  logo_url?: string | null;
+}
+
 type Screen = 'loading' | 'bootstrap' | 'passcode' | 'chat';
 
-export function ChatWindow() {
+interface ChatWindowProps {
+  agentSlug?: string | null;
+  promptSlug?: string | null;
+}
+
+export function ChatWindow({ agentSlug = null, promptSlug = null }: ChatWindowProps = {}) {
+  const [agent, setAgent] = useState<AgentInfo | null>(null);
   const [t, setT] = useState<ChatMessages | null>(null);
   const [screen, setScreen] = useState<Screen>('loading');
   const [profileId, setProfileId] = useState('');
@@ -46,6 +59,50 @@ export function ChatWindow() {
       setScreen('bootstrap');
     }
   }, []);
+
+  // Fetch agent or prompt info if slug provided
+  useEffect(() => {
+    const slug = agentSlug ?? promptSlug;
+    const lookupUrl = promptSlug
+      ? `/api/prompts/lookup?slug=${encodeURIComponent(promptSlug)}`
+      : agentSlug
+        ? `/api/agents/lookup?slug=${encodeURIComponent(agentSlug)}`
+        : null;
+
+    if (!slug || !lookupUrl) {
+      setAgent(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(lookupUrl);
+        if (!res.ok) {
+          if (!cancelled) {
+            setAgent({ slug, name: slug });
+          }
+          return;
+        }
+        const data = await res.json();
+        const a = data?.data;
+        if (a && !cancelled) {
+          setAgent({
+            slug: a.slug ?? slug,
+            name: a.name ?? slug,
+            description: a.description ?? undefined,
+            logo_url: a.logo_url ?? null,
+          });
+        } else if (!cancelled) {
+          setAgent({ slug, name: slug });
+        }
+      } catch {
+        if (!cancelled) setAgent({ slug, name: slug });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [agentSlug, promptSlug]);
 
   const handleBootstrapComplete = useCallback((data: { profileId: string; displayName: string; mode: string }) => {
     setProfileId(data.profileId);
@@ -86,7 +143,13 @@ export function ChatWindow() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'message', profileId, message }),
+        body: JSON.stringify({
+          action: 'message',
+          profileId,
+          message,
+          ...(agentSlug ? { agentSlug } : {}),
+          ...(promptSlug ? { promptSlug } : {}),
+        }),
       });
       const data = await res.json();
 
@@ -106,7 +169,7 @@ export function ChatWindow() {
     } finally {
       setLoading(false);
     }
-  }, [profileId, t]);
+  }, [profileId, t, agentSlug, promptSlug]);
 
   // Loading screen
   if (screen === 'loading' || !t) {
@@ -150,8 +213,18 @@ export function ChatWindow() {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Minimal top bar */}
-      <div className="flex items-center justify-between px-4 py-3">
-        <span className="text-xs font-medium text-muted-foreground/60">OpenAgentX</span>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground/60">OpenAgentX</span>
+          {agent && (
+            <>
+              <span className="text-xs text-muted-foreground/40">/</span>
+              <span className="text-xs font-semibold text-foreground">
+                {agent.name} 에이전트와 채팅
+              </span>
+            </>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-muted-foreground">{displayName}</span>
           <button

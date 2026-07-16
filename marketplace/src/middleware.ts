@@ -85,10 +85,45 @@ function detectLocaleFromHeader(acceptLanguage: string | null): Locale {
 }
 
 /** Paths that should never be locale-prefixed */
-const IGNORED_PREFIXES = ['/api/', '/_next/', '/favicon.ico', '/.well-known/', '/chat'];
+const IGNORED_PREFIXES = ['/api/', '/_next/', '/favicon.ico', '/.well-known/', '/chat', '/oauth/authorize', '/agent-lp/', '/p/', '/embed.js'];
 
 function shouldIgnore(pathname: string): boolean {
   return IGNORED_PREFIXES.some((p) => pathname.startsWith(p));
+}
+
+/**
+ * Subdomain → agent LP rewrite.
+ * 예: agent-builder.openagentx.org/ → /agent-lp/agent-builder
+ *
+ * 예외 서브도메인(메인 사이트로 처리):
+ *   www, api, app, admin, static, cdn, assets, mail, oauth
+ */
+const RESERVED_SUBDOMAINS = new Set([
+  'www', 'api', 'app', 'admin', 'static', 'cdn', 'assets', 'mail', 'oauth',
+  'm', 'mobile', 'beta', 'dev', 'staging', 'test',
+]);
+
+const ROOT_DOMAIN_SUFFIXES = ['openagentx.org', 'openagentx.com'];
+
+function getAgentSlugFromHost(host: string | null): string | null {
+  if (!host) return null;
+  const lower = host.split(':')[0].toLowerCase();
+  // localhost / IP / no-dot → 메인
+  if (!lower.includes('.')) return null;
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(lower)) return null;
+
+  for (const suffix of ROOT_DOMAIN_SUFFIXES) {
+    if (lower === suffix) return null; // apex
+    if (lower.endsWith('.' + suffix)) {
+      const sub = lower.slice(0, -(suffix.length + 1));
+      // sub 가 다중 레벨이면 (예: a.b.openagentx.org) 가장 왼쪽 = 슬러그 후보
+      const first = sub.split('.')[0];
+      if (!first) return null;
+      if (RESERVED_SUBDOMAINS.has(first)) return null;
+      return first;
+    }
+  }
+  return null;
 }
 
 /**
@@ -164,6 +199,40 @@ function resolveLocale(locale: Locale, enabledLangs: string[], defaultLang: stri
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // 1) Subdomain → agent LP rewrite (host header 기반)
+  // 예: agent-builder.openagentx.org/ → /agent-lp/agent-builder
+  // 단 /api/, /_next/, /agent-lp/ 같은 경로는 그대로 전달
+  const hostHeader = request.headers.get('host');
+  const agentSubdomainSlug = getAgentSlugFromHost(hostHeader);
+  if (agentSubdomainSlug) {
+    // API/asset/이미 LP 인 경우는 그대로 둔다
+    const isAssetOrApi =
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/agent-lp/') ||
+      pathname.startsWith('/.well-known/') ||
+      pathname === '/favicon.ico';
+
+    if (!isAssetOrApi) {
+      const url = request.nextUrl.clone();
+      // /chat 같은 special path 는 LP 가 아니라 그대로 라우트 (지금 채팅 흐름)
+      if (pathname === '/' || pathname === '') {
+        url.pathname = `/agent-lp/${agentSubdomainSlug}`;
+      } else if (!pathname.startsWith('/chat') && !pathname.startsWith('/oauth/')) {
+        // 임의 sub-path 접근은 LP 루트로 보낸다 (단순화)
+        url.pathname = `/agent-lp/${agentSubdomainSlug}`;
+      }
+      const headers = new Headers(request.headers);
+      headers.set('x-agent-subdomain', agentSubdomainSlug);
+      return NextResponse.rewrite(url, { request: { headers } });
+    }
+
+    // API 호출은 일반 처리하되, 헤더에 agent slug 만 전달
+    if (pathname.startsWith('/api/')) {
+      return injectUserHeaders(request);
+    }
+  }
 
   if (shouldIgnore(pathname)) {
     // For API routes, inject user headers from JWT cookie

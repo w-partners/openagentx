@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>OpenAgentX 설정</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main class="opt-wrap">
+    <h1>OpenAgentX 설정</h1>
+    <p class="opt-sub">API 키를 등록하면 어디서든 한 번의 클릭으로 22+ 에이전트를 사용할 수 있습니다.</p>
+
+    <section class="opt-card">
+      <label for="apiKey">API Key</label>
+      <input id="apiKey" type="password" placeholder="oax_..." autocomplete="off" />
+      <p class="opt-help">
+        키 발급:
+        <a href="https://openagentx.org/profile" target="_blank">openagentx.org/profile</a>
+      </p>
+      <div class="opt-actions">
+        <button id="saveBtn" class="opt-primary">저장</button>
+        <button id="testBtn" class="opt-secondary">키 테스트</button>
+        <button id="toggleBtn" class="opt-ghost" type="button">표시</button>
+      </div>
+      <div id="status" class="opt-status hidden"></div>
+    </section>
+
+    <section class="opt-card">
+      <h2>사용법</h2>
+      <ol>
+        <li>아무 웹 페이지에서 툴바의 OpenAgentX 아이콘을 클릭</li>
+        <li>원하는 에이전트/프롬프트 카드를 선택</li>
+        <li>side panel에 결과가 마크다운으로 표시됨</li>
+        <li>우클릭 메뉴로도 페이지/선택 영역을 즉시 분석</li>
+      </ol>
+    </section>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>

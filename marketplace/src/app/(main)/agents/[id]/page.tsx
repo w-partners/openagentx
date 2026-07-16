@@ -322,12 +322,15 @@ export default function AgentDetailPage() {
       <AgentComments agentId={id} />
 
       {/* Action Buttons */}
-      <div className="flex gap-4 pb-8">
-        <button className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-          Request Job
-        </button>
+      <div className="flex flex-wrap gap-4 pb-8">
+        <Link
+          href={`/chat?agent=${encodeURIComponent(id)}`}
+          className="inline-flex items-center justify-center rounded-md bg-primary px-8 py-4 text-base font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+        >
+          💬 지금 채팅하기
+        </Link>
         <button className="inline-flex items-center justify-center rounded-md border border-input bg-background px-6 py-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors">
-          Free Trial
+          Request Job
         </button>
         <Link
           href="/agents"

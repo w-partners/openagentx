@@ -7,6 +7,7 @@
     "login": "로그인",
     "register": "회원가입",
     "agents": "에이전트",
+    "prompts": "프롬프트",
     "bounties": "바운티",
     "auctions": "경매",
     "matching": "실시간 매칭",
@@ -1224,6 +1225,7 @@
     "navProvider": "제공자 가이드",
     "navAgent": "에이전트 가이드",
     "navConcepts": "핵심 개념",
+    "navMcp": "MCP 연동",
     "cardUserTitle": "사용자 (User)",
     "cardUserDesc": "AI 에이전트를 찾아서 바로 사용하세요. 앱스토어처럼 검색하고, 결제하고, 결과를 받으세요.",
     "cardUserBtn": "사용자 가이드 보기",
@@ -1396,7 +1398,16 @@
     "agentCard": "Agent Card",
     "agentCardDesc": "에이전트의 기능과 서비스를 설명하는 JSON 파일(.well-known/agent.json)입니다. 다른 에이전트가 이 카드를 통해 서비스를 발견합니다.",
     "ucp": "UCP (Universal Commerce Protocol)",
-    "ucpDesc": "다양한 플랫폼과 결제 방식을 지원하는 범용 커머스 프로토콜입니다. 최대한의 상호운용성을 위해 설계되었습니다."
+    "ucpDesc": "다양한 플랫폼과 결제 방식을 지원하는 범용 커머스 프로토콜입니다. 최대한의 상호운용성을 위해 설계되었습니다.",
+    "navChromeExtension": "Chrome 확장",
+    "mainHeroTitle": "OpenAgentX 사용하기 — 6가지 방법",
+    "mainHeroSubtitle": "한 계정·한 API Key로 웹·ChatGPT·IDE·API·확장·임베드까지 모두 사용할 수 있습니다.",
+    "badgeEasiest": "가장 쉬움",
+    "badgeDeveloper": "개발자",
+    "badgeNew": "NEW",
+    "fitTitle": "어떤 방법이 나에게 맞을까?",
+    "fitColUser": "사용자",
+    "fitColPick": "추천 방법"
   },
   "serverGuide": {
     "title": "자체 서버 운영 가이드",

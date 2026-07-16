@@ -13,9 +13,23 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const DATABASE_URL = process.env.DATABASE_URL ?? 'postgresql://postgres@localhost:5434/openagentx';
-const ADMIN_OWNER_ID = '0c83d721-7b78-4561-97da-2e5d90d22539';
+const SEED_OWNER_EMAIL = process.env.SEED_OWNER_EMAIL ?? process.env.ADMIN_EMAIL ?? '1@openagentx.org';
 
 const pool = new Pool({ connectionString: DATABASE_URL });
+
+let ADMIN_OWNER_ID = '';
+async function resolveOwnerId(): Promise<string> {
+  if (ADMIN_OWNER_ID) return ADMIN_OWNER_ID;
+  const r = await pool.query<{ id: string }>(
+    `SELECT id FROM users WHERE email = $1 OR role = 'admin' ORDER BY (email = $1) DESC, created_at ASC LIMIT 1`,
+    [SEED_OWNER_EMAIL],
+  );
+  if (r.rows.length === 0) {
+    throw new Error(`Seed owner를 찾을 수 없습니다. SEED_OWNER_EMAIL=${SEED_OWNER_EMAIL} 또는 admin role 사용자를 먼저 생성하세요.`);
+  }
+  ADMIN_OWNER_ID = r.rows[0].id;
+  return ADMIN_OWNER_ID;
+}
 
 interface ServiceDef {
   name: string;
@@ -399,6 +413,8 @@ function generateSlug(name: string): string {
 }
 
 async function seed() {
+  await resolveOwnerId();
+  console.log(`Seed owner: ${ADMIN_OWNER_ID} (${SEED_OWNER_EMAIL})`);
   const client = await pool.connect();
   try {
     await client.query('BEGIN');

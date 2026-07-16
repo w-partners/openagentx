@@ -25,6 +25,10 @@ export async function GET() {
       contact: { name: 'OpenAgentX', url: 'https://openagentx.org' },
     },
     servers: [{ url: 'https://openagentx.org', description: 'Production' }],
+    security: [
+      { bearerAuth: [] },
+      { oauth2: ['agents:read', 'agents:execute', 'balance:read'] },
+    ],
     paths: {
       '/api/v1/agents': {
         get: {
@@ -237,6 +241,294 @@ export async function GET() {
           security: [{ bearerAuth: [] }],
         },
       },
+      '/api/v1/prompts': {
+        get: {
+          operationId: 'listPrompts',
+          summary: '프롬프트 라이브러리 목록 조회',
+          description: '공개된 시스템 프롬프트 모음을 조회합니다. 인증 불필요.',
+          parameters: [
+            { name: 'q', in: 'query', schema: { type: 'string' }, description: '검색어 (제목/설명/태그)' },
+            { name: 'category', in: 'query', schema: { type: 'string' }, description: '카테고리 필터' },
+            { name: 'limit', in: 'query', schema: { type: 'integer', default: 20, maximum: 100 } },
+            { name: 'offset', in: 'query', schema: { type: 'integer', default: 0 } },
+          ],
+          responses: {
+            '200': successResponse('프롬프트 목록', {
+              data: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    slug: { type: 'string' },
+                    title: { type: 'string' },
+                    description: { type: 'string' },
+                    category: { type: 'string' },
+                    tags: { type: 'array', items: { type: 'string' } },
+                    is_featured: { type: 'boolean' },
+                    use_count: { type: 'integer' },
+                    like_count: { type: 'integer' },
+                  },
+                },
+              },
+            }),
+          },
+          security: [],
+        },
+        post: {
+          operationId: 'createPrompt',
+          summary: '새 프롬프트 등록',
+          description: '인증된 사용자가 새 프롬프트를 라이브러리에 등록합니다.',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['title', 'description', 'system_prompt'],
+                  properties: {
+                    slug: { type: 'string', description: '슬러그 (생략 시 자동 생성)' },
+                    title: { type: 'string' },
+                    title_ko: { type: 'string' },
+                    description: { type: 'string' },
+                    description_ko: { type: 'string' },
+                    system_prompt: { type: 'string', description: '시스템 프롬프트 본문' },
+                    category: { type: 'string' },
+                    tags: { type: 'array', items: { type: 'string' } },
+                    example_input: { type: 'string' },
+                    example_output: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            '201': successResponse('생성된 프롬프트', {
+              id: { type: 'string' },
+              slug: { type: 'string' },
+              title: { type: 'string' },
+              category: { type: 'string' },
+            }),
+          },
+          security: [{ bearerAuth: [] }, { oauth2: ['prompts:write'] }],
+        },
+      },
+      '/api/v1/prompts/{slug}': {
+        get: {
+          operationId: 'getPrompt',
+          summary: '프롬프트 상세 조회',
+          parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            '200': successResponse('프롬프트 상세', {
+              id: { type: 'string' },
+              slug: { type: 'string' },
+              title: { type: 'string' },
+              description: { type: 'string' },
+              system_prompt: { type: 'string' },
+              category: { type: 'string' },
+              tags: { type: 'array', items: { type: 'string' } },
+              example_input: { type: 'string' },
+              example_output: { type: 'string' },
+              use_count: { type: 'integer' },
+              like_count: { type: 'integer' },
+            }),
+          },
+          security: [],
+        },
+      },
+      '/api/v1/prompts/{slug}/run': {
+        post: {
+          operationId: 'runPrompt',
+          summary: '프롬프트 실행',
+          description: '프롬프트의 system_prompt + 사용자 입력으로 Claude를 호출합니다. 결과는 prompt_runs 에 기록됩니다.',
+          parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' } }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['input'],
+                  properties: {
+                    input: { type: 'string', description: '실행 입력' },
+                    model: { type: 'string', enum: ['sonnet', 'opus', 'haiku'], description: '모델 선택 (기본 sonnet)' },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            '200': successResponse('실행 결과', {
+              run_id: { type: 'string' },
+              slug: { type: 'string' },
+              output: { type: 'string' },
+              duration_ms: { type: 'integer' },
+            }),
+          },
+          security: [{ bearerAuth: [] }, { oauth2: ['prompts:execute'] }],
+        },
+      },
+      '/api/v1/workflows': {
+        get: {
+          operationId: 'listWorkflows',
+          summary: '워크플로우 목록 조회',
+          description: '공개된 비주얼 워크플로우 목록을 조회합니다.',
+          parameters: [
+            { name: 'q', in: 'query', schema: { type: 'string' }, description: '검색어' },
+            { name: 'category', in: 'query', schema: { type: 'string' } },
+            { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+            { name: 'offset', in: 'query', schema: { type: 'integer', default: 0 } },
+          ],
+          responses: {
+            '200': successResponse('워크플로우 목록', {
+              data: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    slug: { type: 'string' },
+                    name: { type: 'string' },
+                    description: { type: 'string' },
+                    category: { type: 'string' },
+                    use_count: { type: 'integer' },
+                    node_count: { type: 'integer' },
+                  },
+                },
+              },
+              total: { type: 'integer' },
+            }),
+          },
+          security: [],
+        },
+        post: {
+          operationId: 'createWorkflow',
+          summary: '워크플로우 등록',
+          description: '인증된 사용자가 새 비주얼 워크플로우를 등록합니다.',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['name', 'definition'],
+                  properties: {
+                    slug: { type: 'string' },
+                    name: { type: 'string' },
+                    description: { type: 'string' },
+                    definition: {
+                      type: 'object',
+                      required: ['nodes', 'edges'],
+                      properties: {
+                        nodes: { type: 'array', items: { type: 'object' } },
+                        edges: { type: 'array', items: { type: 'object' } },
+                      },
+                    },
+                    category: { type: 'string' },
+                    tags: { type: 'array', items: { type: 'string' } },
+                    is_public: { type: 'boolean' },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            '201': successResponse('생성된 워크플로우', {
+              id: { type: 'string' },
+              slug: { type: 'string' },
+              name: { type: 'string' },
+            }),
+          },
+          security: [{ bearerAuth: [] }, { oauth2: ['workflows:write'] }],
+        },
+      },
+      '/api/v1/workflows/{slug}': {
+        get: {
+          operationId: 'getWorkflow',
+          summary: '워크플로우 상세 (definition 포함)',
+          parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            '200': successResponse('워크플로우 상세', {
+              id: { type: 'string' },
+              slug: { type: 'string' },
+              name: { type: 'string' },
+              description: { type: 'string' },
+              definition: { type: 'object' },
+              category: { type: 'string' },
+              tags: { type: 'array', items: { type: 'string' } },
+              use_count: { type: 'integer' },
+            }),
+          },
+          security: [],
+        },
+        patch: {
+          operationId: 'updateWorkflow',
+          summary: '워크플로우 수정 (소유자만)',
+          parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' } }],
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string' },
+                    description: { type: 'string' },
+                    definition: { type: 'object' },
+                    category: { type: 'string' },
+                    tags: { type: 'array', items: { type: 'string' } },
+                    is_public: { type: 'boolean' },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            '200': successResponse('수정 완료', { slug: { type: 'string' }, name: { type: 'string' } }),
+          },
+          security: [{ bearerAuth: [] }, { oauth2: ['workflows:write'] }],
+        },
+        delete: {
+          operationId: 'deleteWorkflow',
+          summary: '워크플로우 삭제 (소유자만)',
+          parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            '200': successResponse('삭제 완료', { deleted: { type: 'boolean' } }),
+          },
+          security: [{ bearerAuth: [] }, { oauth2: ['workflows:write'] }],
+        },
+      },
+      '/api/v1/workflows/{slug}/run': {
+        post: {
+          operationId: 'runWorkflow',
+          summary: '워크플로우 실행',
+          description: '입력값을 받아 노드 그래프를 토포로지 순서로 실행합니다. 결과는 workflow_runs 에 기록됩니다.',
+          parameters: [{ name: 'slug', in: 'path', required: true, schema: { type: 'string' } }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['input'],
+                  properties: {
+                    input: { type: 'string', description: '워크플로우 시작 입력' },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            '200': successResponse('실행 결과', {
+              run_id: { type: 'string' },
+              slug: { type: 'string' },
+              output: { type: 'string', description: '최종 출력' },
+              step_results: { type: 'object', description: '노드별 결과' },
+              duration_ms: { type: 'integer' },
+            }),
+          },
+          security: [{ bearerAuth: [] }, { oauth2: ['workflows:execute'] }],
+        },
+      },
       '/api/v1/balance': {
         get: {
           operationId: 'checkBalance',
@@ -360,6 +652,7 @@ export async function GET() {
               expiresIn: { type: 'integer', description: '만료 시간(초)' },
             }),
           },
+          security: [],
         },
       },
       '/api/v1/auth/verify': {
@@ -387,6 +680,7 @@ export async function GET() {
               userId: { type: 'string' },
             }),
           },
+          security: [],
         },
       },
     },
@@ -396,7 +690,29 @@ export async function GET() {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          description: 'OpenAgentX API Key (oax_로 시작). 프로필 페이지에서 발급.',
+          description: 'OpenAgentX API Key (oax_로 시작) 또는 OAuth access token (oac_at_/oax_at_).',
+        },
+        oauth2: {
+          type: 'oauth2',
+          description: 'ChatGPT Custom GPT Actions 호환 OAuth 2.0 Authorization Code flow.',
+          flows: {
+            authorizationCode: {
+              authorizationUrl: 'https://openagentx.org/oauth/authorize',
+              tokenUrl: 'https://openagentx.org/api/oauth/token',
+              scopes: {
+                'agents:read': '에이전트 목록 조회',
+                'agents:execute': '에이전트 실행 (포인트 차감)',
+                'balance:read': '잔액 조회',
+                'balance:write': '잔액 변경 (충전/차감)',
+                'prompts:read': '프롬프트 목록/상세 조회',
+                'prompts:execute': '프롬프트 실행 (Claude 호출)',
+                'prompts:write': '프롬프트 등록/수정',
+                'workflows:read': '워크플로우 목록/상세 조회',
+                'workflows:execute': '워크플로우 실행 (Claude 체인 호출)',
+                'workflows:write': '워크플로우 등록/수정',
+              },
+            },
+          },
         },
       },
     },

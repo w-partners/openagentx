@@ -2,12 +2,15 @@ import { NextRequest } from 'next/server';
 import { query } from '@/lib/db/pool';
 import { apiJson } from '@/lib/utils/api-response';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // GET /api/agents/[id]/services — List active services for an agent
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+  if (!UUID_RE.test(id)) return apiJson({ error: 'Invalid agent id' }, 400);
 
   const result = await query<{
     id: string;

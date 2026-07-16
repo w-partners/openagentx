@@ -7,12 +7,15 @@ const subscribeSchema = z.object({
   tier_id: z.string().uuid(),
 });
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // GET /api/agents/[id]/subscriptions — List subscription tiers
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: agentId } = await params;
+  if (!UUID_RE.test(agentId)) return apiJson({ error: 'Invalid agent id' }, 400);
 
   try {
     const tiers = await subsRepo.findTiersByAgent(agentId);

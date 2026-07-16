@@ -174,12 +174,32 @@ export default function MatchingPage() {
       .finally(() => setLoading(false));
   }, [selectedCategory]);
 
+  // Subscribe to SSE push updates. The stream sends an initial snapshot on
+  // connect, so we rely on it for first render (no explicit loadRequests call).
   useEffect(() => {
-    loadRequests();
-    // Auto-refresh every 15 seconds
-    const interval = setInterval(loadRequests, 15000);
-    return () => clearInterval(interval);
-  }, [loadRequests]);
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (selectedCategory) params.set('category', selectedCategory);
+    const url = `/api/matching/stream${params.toString() ? `?${params.toString()}` : ''}`;
+    const es = new EventSource(url);
+    es.onmessage = (ev) => {
+      try {
+        const res = JSON.parse(ev.data);
+        if (res && res.success) setRequests(res.data ?? []);
+      } catch {
+        /* ignore malformed frame */
+      } finally {
+        setLoading(false);
+      }
+    };
+    es.onerror = () => {
+      // Browser will auto-reconnect; just surface loading off.
+      setLoading(false);
+    };
+    return () => {
+      es.close();
+    };
+  }, [selectedCategory]);
 
   return (
     <div className="space-y-8">

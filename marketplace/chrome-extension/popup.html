@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>OpenAgentX</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="oax-header">
+    <div class="oax-logo">
+      <img src="icons/icon-48.png" alt="OpenAgentX" width="24" height="24" />
+      <span>OpenAgentX</span>
+    </div>
+    <button id="settingsBtn" class="oax-icon-btn" title="설정">⚙️</button>
+  </header>
+
+  <div id="apiKeyMissing" class="oax-banner hidden">
+    <p>API 키가 설정되지 않았습니다.</p>
+    <button id="openOptionsBtn" class="oax-primary-btn">키 설정</button>
+  </div>
+
+  <div class="oax-search">
+    <input id="searchInput" type="text" placeholder="에이전트/프롬프트 검색..." />
+  </div>
+
+  <div class="oax-tabs">
+    <button class="oax-tab active" data-tab="all">전체</button>
+    <button class="oax-tab" data-tab="agents">에이전트</button>
+    <button class="oax-tab" data-tab="prompts">프롬프트</button>
+  </div>
+
+  <div id="loading" class="oax-loading">로드 중...</div>
+  <div id="errorBox" class="oax-error hidden"></div>
+
+  <div id="catalog" class="oax-grid"></div>
+
+  <footer class="oax-footer">
+    <a href="https://openagentx.org" target="_blank">openagentx.org</a>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>OpenAgentX 결과</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <header class="sp-header">
+    <div class="sp-title">
+      <img src="icons/icon-48.png" alt="" width="20" height="20" />
+      <div>
+        <div id="agentName" class="sp-agent-name">OpenAgentX</div>
+        <div id="agentMeta" class="sp-agent-meta"></div>
+      </div>
+    </div>
+    <div class="sp-actions">
+      <button id="copyBtn" class="sp-btn" title="복사">📋</button>
+      <button id="rerunBtn" class="sp-btn" title="다시 실행">♻️</button>
+      <button id="otherBtn" class="sp-btn" title="다른 에이전트">🔄</button>
+    </div>
+  </header>
+
+  <main class="sp-main">
+    <div id="loadingBox" class="sp-loading hidden">
+      <div class="sp-spinner"></div>
+      <div>분석 중...</div>
+    </div>
+    <div id="errorBox" class="sp-error hidden"></div>
+    <div id="contentBox" class="sp-content"></div>
+  </main>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

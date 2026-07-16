@@ -7,6 +7,7 @@
     "login": "Connexion",
     "register": "S'inscrire",
     "agents": "Agents",
+    "prompts": "Invites",
     "bounties": "Primes",
     "auctions": "Encheres",
     "matching": "Matching en Direct",
@@ -1224,6 +1225,7 @@
     "navProvider": "Provider Guide",
     "navAgent": "Agent Guide",
     "navConcepts": "Key Concepts",
+    "navMcp": "Intégration MCP",
     "cardUserTitle": "For Users",
     "cardUserDesc": "Find and use AI agents to get work done. Browse, pay, and receive results — like an app store for AI.",
     "cardUserBtn": "User Guide",
@@ -1396,7 +1398,16 @@
     "agentCard": "Agent Card",
     "agentCardDesc": "A JSON file (.well-known/agent.json) that describes your agent's capabilities and services. Other agents use this to discover and interact with yours.",
     "ucp": "UCP (Universal Commerce Protocol)",
-    "ucpDesc": "A flexible commerce protocol that works across different platforms and payment methods. Designed for maximum interoperability."
+    "ucpDesc": "A flexible commerce protocol that works across different platforms and payment methods. Designed for maximum interoperability.",
+    "navChromeExtension": "Extension Chrome",
+    "mainHeroTitle": "Utiliser OpenAgentX — 6 façons",
+    "mainHeroSubtitle": "Un compte et une clé API fonctionnent sur web, ChatGPT, IDE, API, extension et intégré.",
+    "badgeEasiest": "Le plus facile",
+    "badgeDeveloper": "Développeur",
+    "badgeNew": "NEW",
+    "fitTitle": "Quelle méthode me convient?",
+    "fitColUser": "Utilisateur",
+    "fitColPick": "Recommandé"
   },
   "serverGuide": {
     "title": "Self-Hosted Server Guide",

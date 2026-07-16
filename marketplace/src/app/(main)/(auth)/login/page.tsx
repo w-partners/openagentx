@@ -27,7 +27,11 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (data.success) {
-        window.location.href = `/${locale}`;
+        // resolveNext is defined later but window is available — read query directly
+        const sp = new URLSearchParams(window.location.search);
+        const raw = sp.get('next');
+        const dest = raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : `/${locale}`;
+        window.location.href = dest;
       } else {
         setError(data.error ?? dict.auth.googleLoginFailed);
       }
@@ -54,6 +58,22 @@ export default function LoginPage() {
 
   const prefix = `/${locale}`;
 
+  /**
+   * Resolve post-login destination.
+   * Priority: ?next= query param (must be a same-origin path) → locale root.
+   */
+  function resolveNext(): string {
+    if (typeof window === 'undefined') return prefix;
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const raw = sp.get('next');
+      if (!raw) return prefix;
+      // Only allow same-origin relative paths to prevent open redirect
+      if (raw.startsWith('/') && !raw.startsWith('//')) return raw;
+    } catch {}
+    return prefix;
+  }
+
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
     setIsLoading(true);
@@ -68,7 +88,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (data.success) {
-        window.location.href = prefix;
+        window.location.href = resolveNext();
       } else {
         setError(data.error ?? dict.auth.loginFailed);
       }
@@ -128,7 +148,7 @@ export default function LoginPage() {
       const loginData = await loginRes.json();
 
       if (loginData.success) {
-        window.location.href = prefix;
+        window.location.href = resolveNext();
       } else {
         setError(loginData.error ?? dict.auth.walletLoginFailed);
       }

@@ -84,6 +84,49 @@ export default async function HomePage() {
         ))}
       </section>
 
+      {/* How to use — 6 ways teaser */}
+      <section className="rounded-2xl border bg-gradient-to-br from-primary/5 via-transparent to-transparent p-6 md:p-8 space-y-4">
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+            {locale === 'ko'
+              ? 'OpenAgentX, 어떻게 사용하시겠어요?'
+              : 'How would you like to use OpenAgentX?'}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {locale === 'ko'
+              ? '웹 · ChatGPT · IDE · API · Chrome 확장 · Embed — 6가지 방법 중 하나를 골라 시작하세요.'
+              : 'Web, ChatGPT, IDE, API, Chrome Extension, Embed — pick one of 6 ways to start.'}
+          </p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-center">
+          {[
+            { icon: '🌐', label: locale === 'ko' ? '웹' : 'Web', href: `${prefix}/agents` },
+            { icon: '🤖', label: 'ChatGPT', href: `${prefix}/guide/customgpt` },
+            { icon: '🛠️', label: 'MCP', href: `${prefix}/guide/mcp` },
+            { icon: '🐍', label: 'API', href: `${prefix}/guide/api` },
+            { icon: '🧩', label: 'Chrome', href: `${prefix}/guide/chrome-extension` },
+            { icon: '💬', label: 'Embed', href: `${prefix}/guide/embed` },
+          ].map((m) => (
+            <Link
+              key={m.label}
+              href={m.href}
+              className="rounded-xl border bg-card p-3 hover:bg-accent transition-colors space-y-1"
+            >
+              <div className="text-2xl">{m.icon}</div>
+              <div className="text-xs font-medium">{m.label}</div>
+            </Link>
+          ))}
+        </div>
+        <div className="text-center pt-2">
+          <Link
+            href={`${prefix}/guide`}
+            className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            {locale === 'ko' ? '사용 시작하기' : 'Get Started'} &rarr;
+          </Link>
+        </div>
+      </section>
+
       {/* Category Navigation */}
       <section className="space-y-4">
         <h2 className="text-2xl font-bold text-center">{dict.home.categories}</h2>

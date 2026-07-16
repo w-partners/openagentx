@@ -96,10 +96,24 @@ export default function ChainDetailPage() {
 
   useEffect(() => {
     loadData();
-    // Auto-refresh for running instances
-    const interval = setInterval(loadData, 10000);
-    return () => clearInterval(interval);
-  }, [loadData]);
+    // SSE: server pushes updates when chain state changes
+    const es = new EventSource(`/api/chains/stream?id=${id}`);
+    es.onmessage = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.data);
+        if (parsed?.success) {
+          setData(parsed.data);
+          setDataType(parsed.type ?? 'flow');
+        }
+      } catch {
+        /* ignore malformed frame */
+      }
+    };
+    es.onerror = () => {
+      /* EventSource auto-reconnects */
+    };
+    return () => es.close();
+  }, [id, loadData]);
 
   const handleStart = async () => {
     setStarting(true);

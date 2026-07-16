@@ -279,11 +279,12 @@ export async function selectBid(
 
     const bid = bidResult.rows[0];
 
-    // Create marketplace_job
+    // Create marketplace_job — service_id가 NOT NULL 이므로 첫 번째 active 서비스를 사용
     const jobResult = await client.query<{ id: string }>(
-      `INSERT INTO marketplace_jobs (agent_id, buyer_id, payment_amount, status, commission_rate)
+      `INSERT INTO marketplace_jobs (agent_id, buyer_id, payment_amount, status, commission_rate, service_id)
        SELECT $1, $2, $3, 'pending',
-              COALESCE((SELECT commission_rate FROM agents WHERE id = $1), 0)
+              COALESCE((SELECT commission_rate FROM agents WHERE id = $1), 0),
+              (SELECT id FROM agent_services WHERE agent_id = $1 AND is_active = TRUE ORDER BY price_usdc ASC LIMIT 1)
        RETURNING id`,
       [bid.agent_id, requesterId, bid.offer_price],
     );

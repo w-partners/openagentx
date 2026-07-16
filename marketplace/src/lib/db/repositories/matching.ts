@@ -2,6 +2,7 @@ import { query, transaction } from '../pool';
 import type { PoolClient } from 'pg';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '../../utils/constants';
 import { notifySafe, notifyProvidersSafe } from '../../telegram/notifications';
+import { emitMatchingUpdate } from '../../matching/event-bus';
 
 // --- Types ---
 
@@ -100,6 +101,8 @@ export async function createRequest(input: {
     requestId: result.rows[0].id,
   });
 
+  emitMatchingUpdate({ action: 'created', id: result.rows[0].id, category: input.category });
+
   return result.rows[0].id;
 }
 
@@ -183,7 +186,7 @@ export async function acceptRequest(
       });
     }
 
-    return {
+    const resultPayload = {
       requesterContact: request.requester_contact,
       providerInfo: {
         provider_name: providerResult.rows[0]?.name,
@@ -192,6 +195,10 @@ export async function acceptRequest(
         agent_slug: agent.slug,
       },
     };
+
+    emitMatchingUpdate({ action: 'accepted', id: requestId, category: request.category });
+
+    return resultPayload;
   });
 }
 
@@ -263,6 +270,7 @@ export async function cancelRequest(requestId: string, requesterId: string): Pro
   if (result.rowCount === 0) {
     throw new Error('매칭 요청을 찾을 수 없거나 취소할 수 없는 상태입니다');
   }
+  emitMatchingUpdate({ action: 'cancelled', id: requestId });
 }
 
 export async function getMyRequests(
@@ -330,7 +338,9 @@ export async function expireRequests(): Promise<number> {
   const result = await query(
     "UPDATE matching_requests SET status = 'expired' WHERE status = 'waiting' AND expires_at < NOW()",
   );
-  return result.rowCount ?? 0;
+  const n = result.rowCount ?? 0;
+  if (n > 0) emitMatchingUpdate({ action: 'expired', count: n });
+  return n;
 }
 
 // --- Provider Availability ---

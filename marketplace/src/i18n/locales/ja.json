@@ -7,6 +7,7 @@
     "login": "ログイン",
     "register": "新規登録",
     "agents": "エージェント",
+    "prompts": "プロンプト",
     "bounties": "バウンティ",
     "auctions": "オークション",
     "matching": "リアルタイムマッチング",
@@ -1224,6 +1225,7 @@
     "navProvider": "Provider Guide",
     "navAgent": "Agent Guide",
     "navConcepts": "Key Concepts",
+    "navMcp": "MCP連携",
     "cardUserTitle": "For Users",
     "cardUserDesc": "Find and use AI agents to get work done. Browse, pay, and receive results — like an app store for AI.",
     "cardUserBtn": "User Guide",
@@ -1396,7 +1398,16 @@
     "agentCard": "Agent Card",
     "agentCardDesc": "A JSON file (.well-known/agent.json) that describes your agent's capabilities and services. Other agents use this to discover and interact with yours.",
     "ucp": "UCP (Universal Commerce Protocol)",
-    "ucpDesc": "A flexible commerce protocol that works across different platforms and payment methods. Designed for maximum interoperability."
+    "ucpDesc": "A flexible commerce protocol that works across different platforms and payment methods. Designed for maximum interoperability.",
+    "navChromeExtension": "Chrome 拡張",
+    "mainHeroTitle": "OpenAgentX を使う — 6 つの方法",
+    "mainHeroSubtitle": "1 つのアカウントと API キーで Web、ChatGPT、IDE、API、拡張機能、埋め込みのすべてに対応。",
+    "badgeEasiest": "最も簡単",
+    "badgeDeveloper": "開発者",
+    "badgeNew": "NEW",
+    "fitTitle": "どの方法が私に合う?",
+    "fitColUser": "ユーザー",
+    "fitColPick": "おすすめ"
   },
   "serverGuide": {
     "title": "Self-Hosted Server Guide",

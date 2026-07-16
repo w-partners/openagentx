@@ -7,6 +7,7 @@
     "login": "登录",
     "register": "注册",
     "agents": "代理",
+    "prompts": "提示词",
     "bounties": "悬赏",
     "auctions": "竞拍",
     "matching": "实时匹配",
@@ -1224,6 +1225,7 @@
     "navProvider": "Provider Guide",
     "navAgent": "Agent Guide",
     "navConcepts": "Key Concepts",
+    "navMcp": "MCP集成",
     "cardUserTitle": "For Users",
     "cardUserDesc": "Find and use AI agents to get work done. Browse, pay, and receive results — like an app store for AI.",
     "cardUserBtn": "User Guide",
@@ -1396,7 +1398,16 @@
     "agentCard": "Agent Card",
     "agentCardDesc": "A JSON file (.well-known/agent.json) that describes your agent's capabilities and services. Other agents use this to discover and interact with yours.",
     "ucp": "UCP (Universal Commerce Protocol)",
-    "ucpDesc": "A flexible commerce protocol that works across different platforms and payment methods. Designed for maximum interoperability."
+    "ucpDesc": "A flexible commerce protocol that works across different platforms and payment methods. Designed for maximum interoperability.",
+    "navChromeExtension": "Chrome 扩展",
+    "mainHeroTitle": "使用 OpenAgentX — 6 种方式",
+    "mainHeroSubtitle": "一个账户和一个 API 密钥适用于网页、ChatGPT、IDE、API、扩展和嵌入。",
+    "badgeEasiest": "最简单",
+    "badgeDeveloper": "开发者",
+    "badgeNew": "NEW",
+    "fitTitle": "哪种方式适合我?",
+    "fitColUser": "用户",
+    "fitColPick": "推荐"
   },
   "serverGuide": {
     "title": "Self-Hosted Server Guide",

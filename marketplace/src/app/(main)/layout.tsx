@@ -68,7 +68,7 @@ export default async function MainLayout({
     <AdminLocaleProvider isAdmin={isAdmin}>
       <Header dict={effectiveDict} locale={effectiveLocale} isLoggedIn={isLoggedIn} userRole={userRole} enabledPages={enabledPages} />
       <main className="container mx-auto px-4 py-8">{children}</main>
-      <Footer dict={effectiveDict} version={getAppVersion()} />
+      <Footer dict={effectiveDict} version={getAppVersion()} locale={locale} />
     </AdminLocaleProvider>
   );
 }

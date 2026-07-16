@@ -5,6 +5,7 @@
 import * as chainsRepo from '../db/repositories/chains';
 import type { ChainStep, ChainInstance, StepResult } from '../db/repositories/chains';
 import { query } from '../db/pool';
+import { emitChainUpdate } from './event-bus';
 
 export interface StepExecutionResult {
   job_id?: string;
@@ -27,6 +28,8 @@ export async function executeStep(
     chain_step_index: stepIndex,
     previous_result: previousResult ?? null,
   };
+
+  emitChainUpdate(instance.id, { stepIndex, phase: 'step-start' });
 
   switch (step.type) {
     case 'fixed':
@@ -188,10 +191,14 @@ export async function onStepComplete(
     cost,
   );
 
+  emitChainUpdate(instanceId, { phase: 'step-complete', stepIndex });
+
   if (hasMore && autoTrigger) {
     // 다음 스텝 자동 실행
     const instance = await chainsRepo.advanceChain(instanceId);
     if (!instance || !instance.flow_steps) return;
+
+    emitChainUpdate(instanceId, { phase: 'advance', currentStep: instance.current_step });
 
     const nextStep = instance.flow_steps[instance.current_step];
     if (!nextStep) return;
@@ -204,7 +211,9 @@ export async function onStepComplete(
       await executeStep(instance, nextStep, instance.current_step, prevResult);
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
+      emitChainUpdate(instanceId, { phase: 'failed', stepIndex: instance.current_step });
       await chainsRepo.failChain(instanceId, `스텝 ${instance.current_step} 실행 실패: ${errMsg}`);
+      emitChainUpdate(instanceId, { phase: 'failed', stepIndex: instance.current_step });
     }
   }
 }
@@ -235,4 +244,5 @@ export async function checkChainCompletion(
   if (!data?.chain_instance_id || data.chain_step_index === null) return;
 
   await onStepComplete(data.chain_instance_id, data.chain_step_index, result, cost);
+  emitChainUpdate(data.chain_instance_id, { phase: 'checked', stepIndex: data.chain_step_index });
 }

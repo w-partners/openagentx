@@ -52,12 +52,15 @@ export async function POST(
   }
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // GET /api/agents/[id]/reviews — List reviews for agent
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id: agentId } = await params;
+  if (!UUID_RE.test(agentId)) return apiJson({ error: 'Invalid agent id' }, 400);
   const { searchParams } = request.nextUrl;
 
   const sort = searchParams.get('sort') as 'created_at' | 'rating' | null;

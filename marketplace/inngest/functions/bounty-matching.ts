@@ -1,24 +1,74 @@
 import { inngest } from '../client';
+import { query } from '../../src/lib/db/pool';
+
+interface OpenBounty {
+  id: string;
+  category: string;
+  tags: string[];
+}
+
+interface MatchedAgent {
+  id: string;
+  ranking_score: number;
+  avg_rating: number;
+}
 
 export const bountyMatching = inngest.createFunction(
   { id: 'bounty-matching' },
-  { cron: '*/10 * * * *' }, // Every 10 minutes
+  { cron: '*/10 * * * *' },
   async ({ step }) => {
-    // Step 1: Find open bounties
     const openBounties = await step.run('find-open-bounties', async () => {
-      // TODO: SELECT * FROM bounties WHERE status = 'open'
-      return [] as Array<{ id: string; category: string; tags: string[] }>;
+      const r = await query<OpenBounty>(
+        `SELECT id, category, tags
+         FROM bounties
+         WHERE status = 'open' AND (deadline IS NULL OR deadline > NOW())
+         ORDER BY created_at ASC
+         LIMIT 50`,
+      );
+      return r.rows;
     });
 
-    // Step 2: Match candidates for each bounty
+    let totalCandidatesAdded = 0;
+
     for (const bounty of openBounties) {
-      await step.run(`match-${bounty.id}`, async () => {
-        // TODO: Find top 3 agents by category + tags + rating + success rate
-        // TODO: Insert into bounty_candidates
-        // TODO: Update bounty status to 'pending_match'
+      const added = await step.run(`match-${bounty.id}`, async () => {
+        const candidates = await query<MatchedAgent>(
+          `SELECT a.id, a.ranking_score, a.avg_rating
+           FROM agents a
+           WHERE a.status = 'active'
+             AND a.category = $1
+             AND NOT EXISTS (
+               SELECT 1 FROM bounty_candidates bc
+               WHERE bc.bounty_id = $2 AND bc.agent_id = a.id
+             )
+           ORDER BY a.ranking_score DESC, a.avg_rating DESC, a.total_jobs DESC
+           LIMIT 3`,
+          [bounty.category, bounty.id],
+        );
+
+        if (candidates.rows.length === 0) return 0;
+
+        for (const c of candidates.rows) {
+          await query(
+            `INSERT INTO bounty_candidates (bounty_id, agent_id)
+             VALUES ($1, $2)
+             ON CONFLICT DO NOTHING`,
+            [bounty.id, c.id],
+          );
+        }
+
+        await query(
+          `UPDATE bounties SET status = 'pending_match', updated_at = NOW()
+           WHERE id = $1 AND status = 'open'`,
+          [bounty.id],
+        );
+
+        return candidates.rows.length;
       });
+
+      totalCandidatesAdded += added;
     }
 
-    return { processed: (openBounties as unknown[]).length };
+    return { processed: openBounties.length, candidatesAdded: totalCandidatesAdded };
   },
 );

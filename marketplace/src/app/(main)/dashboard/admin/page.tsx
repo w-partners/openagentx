@@ -19,6 +19,9 @@ import AgentsManageSection from './agents-section';
 import PaymentsSection from './payments-section';
 import TopupManageSection from './topup-section';
 import FeedbackSection from './feedback-section';
+import OAuthClientsSection from './oauth-clients-section';
+import PromptsSection from './prompts-section';
+import WidgetsSection from './widgets-section';
 import { useDict } from '@/i18n/client';
 
 
@@ -112,6 +115,9 @@ export default function AdminDashboardPage() {
           <TabsTrigger value="algorithm">{tabs.algorithm}</TabsTrigger>
           <TabsTrigger value="currency">{tabs.currency ?? 'Currency'}</TabsTrigger>
           <TabsTrigger value="gpt">GPT</TabsTrigger>
+          <TabsTrigger value="oauth">OAuth Apps</TabsTrigger>
+          <TabsTrigger value="prompts">프롬프트</TabsTrigger>
+          <TabsTrigger value="widgets">위젯</TabsTrigger>
           <TabsTrigger value="feedback">피드백</TabsTrigger>
           <TabsTrigger value="settings">{tabs.settings}</TabsTrigger>
         </TabsList>
@@ -151,6 +157,15 @@ export default function AdminDashboardPage() {
         </TabsContent>
         <TabsContent value="gpt">
           <GPTSection />
+        </TabsContent>
+        <TabsContent value="oauth">
+          <OAuthClientsSection />
+        </TabsContent>
+        <TabsContent value="prompts">
+          <PromptsSection />
+        </TabsContent>
+        <TabsContent value="widgets">
+          <WidgetsSection />
         </TabsContent>
         <TabsContent value="feedback">
           <FeedbackSection />

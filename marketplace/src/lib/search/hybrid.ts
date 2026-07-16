@@ -76,7 +76,7 @@ export async function hybridSearch(params: SearchParams): Promise<SearchResult> 
         `SELECT a.*, (${finalScore}) AS search_score
          FROM agents a
          WHERE ${where}
-           AND (a.search_vector @@ plainto_tsquery('simple', $${idx - 1}) OR $${idx - 1} = '')
+           AND a.search_vector @@ plainto_tsquery('simple', $${idx - 1})
          ORDER BY search_score DESC
          LIMIT $${idx++} OFFSET $${idx++}`,
         [...values, limit, offset],
@@ -84,7 +84,7 @@ export async function hybridSearch(params: SearchParams): Promise<SearchResult> 
       query<{ count: string }>(
         `SELECT COUNT(*) as count FROM agents a
          WHERE ${where}
-           AND (a.search_vector @@ plainto_tsquery('simple', $${idx - 2}) OR $${idx - 2} = '')`,
+           AND a.search_vector @@ plainto_tsquery('simple', $${idx - 3})`,
         values,
       ),
     ]);

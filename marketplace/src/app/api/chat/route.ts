@@ -20,6 +20,8 @@ const messageSchema = z.object({
   action: z.literal('message'),
   profileId: z.string().uuid(),
   message: z.string().min(1).max(5000),
+  agentSlug: z.string().min(1).max(120).optional(),
+  promptSlug: z.string().min(1).max(120).optional(),
 });
 
 const loginSchema = z.object({
@@ -153,10 +155,10 @@ export async function POST(request: NextRequest) {
       return apiError(parsed.error.issues[0].message);
     }
 
-    const { profileId, message } = parsed.data;
+    const { profileId, message, agentSlug, promptSlug } = parsed.data;
 
     try {
-      const response = await chat(profileId, message);
+      const response = await chat(profileId, message, { agentSlug, promptSlug });
       return apiJson({ data: { response } });
     } catch (err) {
       const msg = err instanceof Error ? err.message : '알 수 없는 오류';
