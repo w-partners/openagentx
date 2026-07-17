@@ -27,23 +27,35 @@ import { useDict } from '@/i18n/client';
 function OverviewTab({ dict }: { dict: ReturnType<typeof useDict> }) {
   const ap = dict.adminPanel as Record<string, Record<string, string>>;
   const ov = ap.overview;
-  const stats = [
-    { label: ov.totalUsers, value: '-' },
-    { label: ov.totalAgents, value: '-' },
-    { label: ov.totalTransactions, value: '-' },
-    { label: ov.totalRevenue, value: '-' },
-  ];
 
-  const [counts, setCounts] = useState<{ users: number; agents: number }>({ users: 0, agents: 0 });
+  type Overview = {
+    totalUsers: number;
+    totalAgents: number;
+    totalTransactions: number;
+    totalRevenue: number;
+    revenueCurrency: string;
+  };
+  const [overview, setOverview] = useState<Overview | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/users')
+    fetch('/api/admin/overview')
       .then((r) => r.json())
       .then((d) => {
-        if (d.users) setCounts({ users: d.users.length, agents: 0 });
+        if (d.success) setOverview(d as Overview);
       })
       .catch(() => {});
   }, []);
+
+  // 값이 오기 전(또는 실패)에는 '-' 를 보여준다. 0 을 보여주면 "데이터가 없다"로 오독된다.
+  const stats = [
+    { label: ov.totalUsers, value: overview ? String(overview.totalUsers) : '-' },
+    { label: ov.totalAgents, value: overview ? String(overview.totalAgents) : '-' },
+    { label: ov.totalTransactions, value: overview ? String(overview.totalTransactions) : '-' },
+    {
+      label: ov.totalRevenue,
+      value: overview ? `${overview.totalRevenue} ${overview.revenueCurrency}` : '-',
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -53,9 +65,7 @@ function OverviewTab({ dict }: { dict: ReturnType<typeof useDict> }) {
           <Card key={i} size="sm">
             <CardHeader>
               <CardDescription>{s.label}</CardDescription>
-              <CardTitle>
-                {i === 0 ? counts.users : s.value}
-              </CardTitle>
+              <CardTitle>{s.value}</CardTitle>
             </CardHeader>
           </Card>
         ))}

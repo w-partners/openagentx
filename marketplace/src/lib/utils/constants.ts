@@ -1,3 +1,19 @@
+// --- Currency ---
+
+/**
+ * 마켓 내부 정산 통화. marketplace_jobs 의 payment_amount / commission_amount /
+ * provider_amount 는 전부 이 통화 기준이다.
+ *
+ * 플랫폼 전체가 단일통화인 것은 아니다 — 외부 게이트웨이가 닿는 곳에는 통화 컬럼이 있다
+ * (topup_requests.currency DEFAULT 'KRW', payments.currency DEFAULT 'USDC',
+ *  withdrawals.currency DEFAULT 'USDC'). 통화가 변하지 않는 마켓 내부 정산에만 컬럼이 없고,
+ * 그래서 marketplace_jobs 에는 currency 컬럼이 없다(의도된 부재).
+ *
+ * 천장: 마켓 내부 정산에 다통화를 도입한다면 marketplace_jobs 에 currency 컬럼을 추가하는 것부터
+ * 시작할 것. 이 상수를 참조하는 곳이 그 컬럼을 읽도록 바뀌어야 한다.
+ */
+export const MARKETPLACE_SETTLEMENT_CURRENCY = 'USDC';
+
 // --- Service categories ---
 
 export const SERVICE_CATEGORIES = [
