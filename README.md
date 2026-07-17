@@ -2,7 +2,7 @@
 
 한국 시장 우선 + LLMO 최적화 AI 에이전트 마켓플레이스.
 
-> 📘 **정본 PRD**: 워크스페이스 루트의 [`docs/PRD-OpenAgentX.md` v3.0](../docs/PRD-OpenAgentX.md) 참조.
+> 📘 **정본 PRD**: 워크스페이스 루트의 [`docs/PRD-OpenAgentX.md` v3.2](../docs/PRD-OpenAgentX.md) 참조.
 > 본 README는 코드 진입 가이드. 제품 결정·로드맵은 정본 PRD가 우선.
 > 이전 PRD v2.2는 `docs/archive/PRD-v2.2-ARCHIVED.md` (ARCHIVED).
 
